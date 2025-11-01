@@ -1,89 +1,107 @@
-# Supabase Development Environment
+# Supabase Self-Hosted Infrastructure
 
-A complete, production-ready Supabase development environment with Docker Compose, featuring dashboard authentication and custom configurations for team development.
-
-## 🚀 Quick Start
-
-```bash
-# Clone the repository
-git clone https://github.com/KahitSan/supabase-dev.git
-cd supabase-dev
-
-# Navigate to Docker environment
-cd docker/
-
-# Run the setup script
-./setup.sh
-```
-
-**That's it!** Your Supabase environment will be running with:
-
-- **Dashboard**: http://localhost:8000 (login: `kahitsan`)
-- **Studio**: http://localhost:54323 (direct access)
-- **Database**: `postgresql://postgres:***@localhost:54322/postgres`
-- **API**: http://localhost:8000/rest/v1/
-
-## 🌟 Features
-
-- **🔐 Secure Dashboard** - Authentication required for admin access
-- **📊 Complete Stack** - Database, API, Auth, Storage, Analytics
-- **🛠️ Developer Tools** - 15+ utility commands for daily development
-- **📱 GitHub OAuth** - Pre-configured for social authentication
-- **📧 Email Testing** - Built-in email development server
-- **🗃️ File Storage** - Local file storage with custom buckets
-- **📈 Analytics** - Built-in logging and monitoring
-
-## 📚 Documentation
-
-Full documentation is available in the [`docker/README.md`](./docker/README.md) file, including:
-
-- Complete setup instructions
-- Development commands reference
-- Troubleshooting guide
-- Team development practices
-- Configuration options
-
-## 🔧 Quick Commands
-
-```bash
-cd docker/
-
-# View service status
-./dev-utils.sh status
-
-# View logs
-./dev-utils.sh logs
-
-# Connect to database
-./dev-utils.sh psql
-
-# Create backup
-./dev-utils.sh backup
-
-# Reset environment
-./reset.sh
-```
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test with `./setup.sh`
-5. Submit a pull request
-
-## 📋 Requirements
-
-- Docker Desktop
-- Git
-- 8GB+ RAM recommended
-
-## 🆘 Support
-
-- Check the [documentation](./docker/README.md)
-- Review [troubleshooting guide](./docker/README.md#-troubleshooting)
-- Open an issue for bugs or questions
+Docker Compose infrastructure for running Supabase locally.
 
 ---
 
-**Built with ❤️ for the KahitSan development team**
+## Quick Start
+
+```bash
+./setup.sh
+```
+
+Access dashboard: **http://localhost:8000**
+
+---
+
+## Common Commands
+
+```bash
+# Start Supabase
+./setup.sh
+
+# Reset everything (⚠️ deletes all data)
+./setup.sh --reset
+
+# View logs
+cd docker && docker compose logs -f
+
+# Stop services
+cd docker && docker compose down
+```
+
+---
+
+## What This Provides
+
+| Service | URL/Port |
+|---------|----------|
+| Dashboard | http://localhost:8000 |
+| API | http://localhost:8000 |
+| Database | localhost:54322 |
+
+Credentials are in `docker/.env`
+
+---
+
+## Configuration
+
+**Key Settings:**
+- `POSTGRES_PORT=5432` - Internal Docker network port
+- `POSTGRES_EXTERNAL_PORT=54322` - Host machine access port
+
+See `docker/.env` for all configuration.
+
+---
+
+## Documentation
+
+This repository provides **infrastructure only**. For complete documentation on using Supabase with your application:
+
+**📖 See: [uni-api/SUPABASE_WORKFLOW.md](../uni-api/SUPABASE_WORKFLOW.md)**
+
+Topics covered:
+- Creating and applying migrations
+- Multi-environment workflow (local, test, prod)
+- Database access and management
+- Troubleshooting guide
+
+**📖 Detailed Setup Guide: [uni-api/SUPABASE_LOCAL_SETUP.md](../uni-api/SUPABASE_LOCAL_SETUP.md)**
+
+---
+
+## Repository Structure
+
+```
+supabase-dev/          # THIS REPO - Infrastructure only
+├── setup.sh           # Automated setup script
+├── docker/
+│   ├── .env           # Configuration
+│   └── docker-compose.yml
+└── README.md
+
+uni-api/               # Application repository
+├── SUPABASE_WORKFLOW.md        # Main workflow guide
+├── SUPABASE_LOCAL_SETUP.md     # Detailed setup guide
+└── supabase/
+    └── migrations/    # Your database migrations
+```
+
+---
+
+## Prerequisites
+
+- Docker & Docker Compose
+- Supabase CLI: `npm install -g supabase`
+
+---
+
+## Support
+
+- 📖 [Workflow Guide](../uni-api/SUPABASE_WORKFLOW.md)
+- 📖 [Setup Guide](../uni-api/SUPABASE_LOCAL_SETUP.md)
+- 🔧 [Supabase Docs](https://supabase.com/docs)
+
+---
+
+**Status**: ✅ Production Ready | **Last Updated**: November 2, 2025

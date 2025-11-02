@@ -69,7 +69,7 @@ better by downloading them automatically.
 
 ### Directory Layout
 ```
-supabase-dev/
+supabase-air/
 ├── setup.sh              # Main setup script - start here
 ├── docker/
 │   ├── .env              # Configuration (NEVER commit secrets)

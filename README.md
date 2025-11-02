@@ -136,7 +136,7 @@ See `docker/.env` for all configuration.
 ## Repository Structure
 
 ```
-supabase-dev/
+supabase-air/
 ├── setup.sh                # Automated setup script
 ├── docker/
 │   ├── .env                # Configuration (gitignored)

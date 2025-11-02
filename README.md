@@ -1,6 +1,50 @@
 # Supabase Self-Hosted Infrastructure
 
-Docker Compose infrastructure for running Supabase locally.
+Optimized Docker Compose setup for running Supabase locally with reduced resource usage.
+
+> **Based on**: [supabase/supabase](https://github.com/supabase/supabase) - The official Supabase repository
+
+---
+
+## What's Different from Official Supabase?
+
+This repository is an **optimized fork** of the official Supabase self-hosting setup with the following customizations:
+
+### 🎯 Key Changes
+
+1. **Resource Optimization** (~1.6 GB vs ~3+ GB)
+   - Disabled: Realtime, Analytics, Edge Functions, Vector logging
+   - Ideal for development and small-scale deployments
+   - See [OPTIMIZATION.md](./OPTIMIZATION.md) for details
+
+2. **Custom PostgreSQL Port** (54322 instead of 5432)
+   - Avoids conflicts with existing PostgreSQL installations
+   - Internal: 5432, External: 54322
+
+3. **Automated Setup**
+   - Single command setup with validation
+   - Auto-downloads missing initialization files
+   - Configured for immediate use
+
+4. **DigitalOcean Benchmarking**
+   - Resource limit testing for different droplet sizes
+   - See [DIGITALOCEAN-BENCHMARKS.md](./DIGITALOCEAN-BENCHMARKS.md)
+
+5. **Enhanced Documentation**
+   - Comprehensive workflows and troubleshooting
+   - Claude Code integration guide
+   - Development-focused quick reference
+
+**When to use this fork:**
+- Local development environments
+- Resource-constrained deployments
+- Learning Supabase internals
+- Quick prototyping
+
+**When to use official Supabase:**
+- Production deployments
+- Need Realtime/Edge Functions
+- Full feature set required
 
 ---
 
@@ -111,3 +155,21 @@ supabase-dev/
 ---
 
 **Status**: ✅ Production Ready | **Last Updated**: November 2, 2025
+
+---
+
+## Credits & License
+
+This repository is a customized fork based on [supabase/supabase](https://github.com/supabase/supabase).
+
+### Original Project
+- **Repository**: [supabase/supabase](https://github.com/supabase/supabase)
+- **License**: Apache License 2.0
+- **Credits**: All core Supabase functionality is developed and maintained by the Supabase team
+
+### This Fork
+- **Maintained by**: [@KahitSan](https://github.com/KahitSan)
+- **Purpose**: Optimized self-hosting setup for development and resource-constrained environments
+- **Changes**: See [What's Different](#whats-different-from-official-supabase) section above
+
+**Note**: This is not an official Supabase project. For official self-hosting documentation, visit [supabase.com/docs/guides/self-hosting](https://supabase.com/docs/guides/self-hosting).

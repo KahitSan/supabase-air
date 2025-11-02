@@ -437,10 +437,10 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
-    depends_on:
-      # OPTIMIZATION: Vector logging disabled - uncomment to re-enable
-      # vector:
-      #   condition: service_healthy
+    # OPTIMIZATION: Vector logging disabled - uncomment depends_on to re-enable
+    # depends_on:
+    #   vector:
+    #     condition: service_healthy
     environment:
       POSTGRES_HOST: /var/run/postgresql
       PGPORT: ${POSTGRES_PORT}

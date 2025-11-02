@@ -42,7 +42,7 @@ cd docker && docker compose down
 
 Credentials are in `docker/.env`
 
-**Note**: By default, realtime, analytics, edge functions, and vector logging are disabled to reduce resource usage. See [OPTIMIZATION.md](./OPTIMIZATION.md) to re-enable these services if needed.
+**⚡ Optimized Setup**: By default, realtime, analytics, edge functions, and vector logging are disabled to reduce resource usage (~1.6 GB total). See [OPTIMIZATION.md](./OPTIMIZATION.md) to re-enable these services if needed.
 
 ---
 
@@ -58,35 +58,25 @@ See `docker/.env` for all configuration.
 
 ## Documentation
 
-This repository provides **infrastructure only**. For complete documentation on using Supabase with your application:
-
-**📖 See: [uni-api/SUPABASE_WORKFLOW.md](../uni-api/SUPABASE_WORKFLOW.md)**
-
-Topics covered:
-- Creating and applying migrations
-- Multi-environment workflow (local, test, prod)
-- Database access and management
-- Troubleshooting guide
-
-**📖 Detailed Setup Guide: [uni-api/SUPABASE_LOCAL_SETUP.md](../uni-api/SUPABASE_LOCAL_SETUP.md)**
+- **[OPTIMIZATION.md](./OPTIMIZATION.md)** - Resource usage metrics and how to re-enable services
+- **[CLAUDE.md](./CLAUDE.md)** - Quick reference for development with Claude Code
+- **[setup.sh](./setup.sh)** - Automated setup script with validation
+- **[Official Supabase Docs](https://supabase.com/docs/guides/self-hosting)** - Self-hosting guide
 
 ---
 
 ## Repository Structure
 
 ```
-supabase-dev/          # THIS REPO - Infrastructure only
-├── setup.sh           # Automated setup script
+supabase-dev/
+├── setup.sh                # Automated setup script
 ├── docker/
-│   ├── .env           # Configuration
-│   └── docker-compose.yml
+│   ├── .env                # Configuration (gitignored)
+│   ├── docker-compose.yml  # Service definitions
+│   └── volumes/            # Persistent data (gitignored)
+├── OPTIMIZATION.md         # Resource usage & optimization guide
+├── CLAUDE.md               # Development quick reference
 └── README.md
-
-uni-api/               # Application repository
-├── SUPABASE_WORKFLOW.md        # Main workflow guide
-├── SUPABASE_LOCAL_SETUP.md     # Detailed setup guide
-└── supabase/
-    └── migrations/    # Your database migrations
 ```
 
 ---
@@ -94,15 +84,7 @@ uni-api/               # Application repository
 ## Prerequisites
 
 - Docker & Docker Compose
-- Supabase CLI: `npm install -g supabase`
-
----
-
-## Support
-
-- 📖 [Workflow Guide](../uni-api/SUPABASE_WORKFLOW.md)
-- 📖 [Setup Guide](../uni-api/SUPABASE_LOCAL_SETUP.md)
-- 🔧 [Supabase Docs](https://supabase.com/docs)
+- 8GB+ RAM recommended (optimized stack uses ~1.6 GB)
 
 ---
 

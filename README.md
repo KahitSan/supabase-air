@@ -58,9 +58,9 @@ See `docker/.env` for all configuration.
 
 ## Documentation
 
+- **[WORKFLOWS.md](./WORKFLOWS.md)** - Daily operations, backups, and troubleshooting
 - **[OPTIMIZATION.md](./OPTIMIZATION.md)** - Resource usage metrics and how to re-enable services
 - **[CLAUDE.md](./CLAUDE.md)** - Quick reference for development with Claude Code
-- **[setup.sh](./setup.sh)** - Automated setup script with validation
 - **[Official Supabase Docs](https://supabase.com/docs/guides/self-hosting)** - Self-hosting guide
 
 ---

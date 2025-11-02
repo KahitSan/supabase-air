@@ -279,20 +279,27 @@ When I need to find:
 
 ## 📦 Key Services
 
-### Container Overview
+### Container Overview (Optimized Setup)
+
+**Active Services (9 containers):**
 
 | Container | Purpose | Internal Port | External Port |
 |-----------|---------|---------------|---------------|
 | `supabase-db` | PostgreSQL database | 5432 | 54322 |
 | `supabase-auth` | GoTrue auth server | 9999 | - |
 | `supabase-rest` | PostgREST API | 3000 | - |
-| `supabase-realtime` | Realtime subscriptions | 4000 | - |
 | `supabase-storage` | File storage | 5000 | - |
 | `supabase-meta` | Database metadata | 8080 | - |
 | `supabase-studio` | Web dashboard | 3000 | 8000 |
+| `supabase-pooler` | Connection pooler | - | 6543 |
 | `kong` | API gateway | 8000 | 8000 |
-| `vector` | Log aggregation | - | - |
 | `imgproxy` | Image optimization | 5001 | - |
+
+**Disabled Services** (not running, can be re-enabled - see [OPTIMIZATION.md](./OPTIMIZATION.md)):
+- `realtime` - Realtime subscriptions
+- `analytics` - Logflare logging
+- `functions` - Edge functions
+- `vector` - Log aggregation
 
 ### Architecture
 
@@ -329,102 +336,21 @@ Docker Network (172.x.x.x)
 
 ## 🚀 Typical Workflows
 
-### Starting Fresh Environment
-
-```bash
-# Clean slate
-./setup.sh --reset
-
-# Apply all migrations from uni-api
-cd ~/Projects/uni-api
-export DB_PASSWORD="your-password"
-supabase db push --db-url "postgresql://postgres:${DB_PASSWORD}@localhost:54322/postgres?sslmode=disable"
-```
-
-### Updating Configuration
-
-```bash
-# 1. Stop services
-cd docker && docker compose down
-
-# 2. Edit .env
-vim docker/.env
-
-# 3. Restart
-./setup.sh
-```
-
-### Backing Up Data
-
-```bash
-# Backup database
-cd docker
-PGPASSWORD=$(grep POSTGRES_PASSWORD .env | cut -d'=' -f2) \
-  pg_dump -h localhost -p 54322 -U postgres -d postgres > backup_$(date +%Y%m%d_%H%M%S).sql
-
-# Backup volumes
-cd docker
-tar czf volumes_backup_$(date +%Y%m%d_%H%M%S).tar.gz volumes/
-```
-
-### Restoring Data
-
-```bash
-# Restore database
-./setup.sh --reset  # Start fresh
-
-cd docker
-PGPASSWORD=$(grep POSTGRES_PASSWORD .env | cut -d'=' -f2) \
-  psql -h localhost -p 54322 -U postgres -d postgres < backup_20251102_120000.sql
-
-# Restore volumes
-cd docker && docker compose down
-tar xzf volumes_backup_20251102_120000.tar.gz
-./setup.sh
-```
-
-### Troubleshooting a Service
-
-```bash
-# Check service status
-cd docker && docker compose ps
-
-# View service logs
-cd docker && docker compose logs -f [service-name]
-
-# Restart specific service
-cd docker && docker compose restart [service-name]
-
-# Rebuild and restart
-cd docker && docker compose up -d --force-recreate [service-name]
-```
+See **[WORKFLOWS.md](./WORKFLOWS.md)** for detailed workflows including:
+- Starting fresh environment
+- Updating configuration
+- Backing up and restoring data
+- Troubleshooting services
 
 ---
 
-## 📖 Related Documentation
+## 📖 Documentation
 
-This repository is **infrastructure only**. For application-level documentation:
-
-- **[uni-api/SUPABASE_WORKFLOW.md](../uni-api/SUPABASE_WORKFLOW.md)** - Main workflow guide for migrations
-- **[uni-api/SUPABASE_LOCAL_SETUP.md](../uni-api/SUPABASE_LOCAL_SETUP.md)** - Detailed setup with examples
+For detailed workflows and troubleshooting, see:
+- **[WORKFLOWS.md](./WORKFLOWS.md)** - Daily operations, backups, troubleshooting
+- **[OPTIMIZATION.md](./OPTIMIZATION.md)** - Resource usage and service optimization
+- **[README.md](./README.md)** - Quick start guide
 - **[Official Supabase Docs](https://supabase.com/docs/guides/self-hosting)** - Self-hosting guide
-
----
-
-## 🎯 Project Purpose
-
-This repository provides:
-- ✅ Self-hosted Supabase infrastructure
-- ✅ Docker Compose configuration
-- ✅ Automated setup scripts
-- ✅ Service orchestration
-
-This repository does NOT contain:
-- ❌ Application code
-- ❌ Database migrations
-- ❌ Business logic
-
-For application code and migrations, see: **[uni-api](../uni-api/)**
 
 ---
 

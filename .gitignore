@@ -18,3 +18,7 @@ yarn-error.log*
 # Temporary files
 *.tmp
 *.temp
+
+# Editor directories
+.vscode/
+.idea/

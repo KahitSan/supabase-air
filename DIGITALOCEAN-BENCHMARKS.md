@@ -2,6 +2,8 @@
 
 Benchmark results for Supabase running with different DigitalOcean Shared CPU plan resource limits.
 
+**Resource Limiting Approach:** Uses systemd slices to enforce total stack limits. All services share resources dynamically within the total budget (e.g., 2GB RAM, 1 CPU). No per-service limits.
+
 ---
 
 ## Testing Tool
@@ -11,13 +13,13 @@ Use `do-limits.sh` to start Docker with specific resource limits:
 ```bash
 cd docker
 
-# Start with specific plan limits
-./do-limits.sh start 4gb          # Start with 4GB limits
-./do-limits.sh stats              # Check resource usage
+# Start with specific plan limits (systemd-enforced total limits)
+./do-limits.sh start 4gb          # Start with 4GB total RAM, 2 CPUs
+./do-limits.sh stats              # Check resource usage + systemd limits
 ./do-limits.sh stop               # Stop services
 
 # Run full benchmark
-./do-limits.sh test 2gb           # Test with 2GB limits
+./do-limits.sh test 2gb           # Test with 2GB total limits
 ```
 
 See [README.md](./README.md) and [WORKFLOWS.md](./WORKFLOWS.md) for usage details.
@@ -44,60 +46,74 @@ See [README.md](./README.md) and [WORKFLOWS.md](./WORKFLOWS.md) for usage detail
 
 ### 1GB Plan ($6/mo) - DEV/TEST ONLY
 
-#### Idle Resource Usage
-| Service | Memory | CPU % | Status |
-|---------|--------|-------|--------|
-| kong | 16.7 MB | 10.6% | ✅ Healthy |
-| pooler | 83.5 MB | 15.6% | ✅ Healthy |
-| studio | 86.5 MB | 15.9% | ⚠️ 72% of limit |
-| storage | 57.3 MB | 9.0% | ⚠️ 72% of limit |
-| db | 78.8 MB | 0.2% | ✅ Healthy |
-| meta | 52.3 MB | 9.5% | ⚠️ 87% of limit |
-| **Total** | **~574 MB** | **~11.5%** | |
+**Systemd Limits:** 1.0G RAM, 100% CPU (1 core)
+
+#### Idle Resource Usage (Systemd-Limited Stack)
+| Service | Memory | CPU % | Notes |
+|---------|--------|-------|-------|
+| kong | 384 MB | 0.08% | Largest consumer |
+| pooler | 203 MB | 0.41% | Connection pooling |
+| studio | 166 MB | 8.73% | Dashboard |
+| storage | 99 MB | 3.05% | File storage |
+| meta | 75 MB | 0.35% | Metadata |
+| db | 51 MB | 0.02% | PostgreSQL (minimal config) |
+| auth | 8 MB | 0.00% | Authentication |
+| rest | 7 MB | 0.04% | PostgREST API |
+| imgproxy | 10 MB | 0.00% | Image processing |
+| **Total** | **~998 MB** | **~19%** | **97% of 1GB limit** |
+
+**Memory Utilization:** 0.97 GiB / 1.0G (97%)
 
 #### Database Performance
 | Operation | Performance | Status |
 |-----------|-------------|--------|
 | Insert 1000 rows | 1000 rows/sec | ✅ Fast |
-| Query (100x) | Degraded | ❌ Slow under concurrent load |
-| Concurrent connections (10) | Struggles | ❌ Poor |
-| Large inserts (5000x1KB) | Hangs | ❌ Memory limit hit |
+| Startup time | ~22 seconds | ✅ Normal |
+| All services healthy | Yes | ✅ Stable |
 
 #### Load Test Results
 | Metric | Result |
 |--------|--------|
 | Startup | ✅ Success |
-| Idle memory | 56% utilized |
-| Under load | 80-100% memory |
-| Services crashed | Meta became unhealthy |
-| Kong memory | 100% (limit hit) |
+| Idle memory | 97% utilized |
+| All services | ✅ Healthy |
+| Systemd enforcement | ✅ Working |
 
-**Verdict:** ❌ **NOT SUITABLE FOR PRODUCTION**
-- Services hit memory limits under basic load
-- Query performance severely degraded
-- Meta service becomes unhealthy
-- Only suitable for development/testing
+**Verdict:** ⚠️ **TIGHT BUT FUNCTIONAL**
+- Uses 97% of available memory at idle
+- Very limited headroom for traffic spikes
+- All services start and remain healthy
+- Suitable for development/testing only
+- NOT recommended for production due to lack of headroom
 
 ---
 
 ### 2GB Plan ($12/mo) - MINIMUM PRODUCTION
 
-#### Idle Resource Usage
-| Service | Memory Limit | Estimated Idle | Status |
-|---------|--------------|----------------|--------|
-| kong | 280 MB | ~25 MB | ✅ Comfortable |
-| pooler | 280 MB | ~150 MB | ✅ Good |
-| studio | 220 MB | ~150 MB | ✅ Good |
-| storage | 140 MB | ~90 MB | ✅ Good |
-| db | 868 MB | ~140 MB | ✅ Excellent |
-| meta | 100 MB | ~70 MB | ✅ Good |
-| **Total** | **~2048 MB** | **~700 MB** | |
+**Systemd Limits:** 2.0G RAM, 100% CPU (1 core)
+
+#### Idle Resource Usage (Systemd-Limited Stack)
+| Service | Memory | CPU % | Notes |
+|---------|--------|-------|-------|
+| kong | 942 MB | 0.05% | Largest consumer |
+| pooler | 202 MB | 0.34% | Connection pooling |
+| studio | 181 MB | 0.01% | Dashboard |
+| storage | 112 MB | 0.37% | File storage |
+| meta | 118 MB | 0.34% | Metadata |
+| db | 96 MB | 0.04% | PostgreSQL (2GB config) |
+| auth | 11 MB | 0.00% | Authentication |
+| rest | 7 MB | 0.06% | PostgREST API |
+| imgproxy | 22 MB | 4.87% | Image processing |
+| **Total** | **~1689 MB** | **~19%** | **82.5% of 2GB limit** |
+
+**Memory Utilization:** 1.65 GiB / 2.0G (82.5%)
 
 #### Database Performance
 | Operation | Performance | Notes |
 |-----------|-------------|-------|
-| Insert 1000 rows | 1000+ rows/sec | ✅ Fast |
-| Query (100x) | Good | ✅ Stable |
+| Insert 1000 rows | 1000 rows/sec | ✅ Fast |
+| Startup time | ~22 seconds | ✅ Normal |
+| All services healthy | Yes | ✅ Stable |
 | Concurrent connections (10) | Good | ✅ Handles well |
 | Concurrent connections (50) | Moderate | ⚠️ Some slowdown |
 | Large inserts (5000x1KB) | 3-5 sec | ✅ Completes |
@@ -112,9 +128,11 @@ See [README.md](./README.md) and [WORKFLOWS.md](./WORKFLOWS.md) for usage detail
 | Connection pool | 20-30 connections |
 
 **Verdict:** ⚠️ **MINIMUM FOR PRODUCTION**
-- Suitable for small applications
-- Limited headroom for growth
+- Uses 82.5% of memory at idle - limited headroom
+- All services healthy and functional
+- Suitable for small applications and MVPs
 - Single CPU limits concurrency
+- Services can dynamically share the 2GB pool
 - Use for: MVPs, internal tools, low-traffic sites
 
 ---
@@ -147,29 +165,32 @@ Same memory as 2GB plan but with **2 CPUs** instead of 1.
 
 ### 4GB Plan ($24/mo) - RECOMMENDED
 
-#### Idle Resource Usage
-| Service | Memory Limit | Estimated Idle | % Used |
-|---------|--------------|----------------|--------|
-| kong | 512 MB | ~30 MB | 6% |
-| pooler | 512 MB | ~200 MB | 39% |
-| studio | 400 MB | ~180 MB | 45% |
-| storage | 256 MB | ~110 MB | 43% |
-| db | 1888 MB | ~180 MB | 10% |
-| meta | 192 MB | ~85 MB | 44% |
-| **Total** | **~4096 MB** | **~900 MB** | **22%** |
+**Systemd Limits:** 4.0G RAM, 200% CPU (2 cores)
+
+#### Idle Resource Usage (Systemd-Limited Stack)
+| Service | Memory | CPU % | Notes |
+|---------|--------|-------|-------|
+| kong | 940 MB | 0.09% | Largest consumer |
+| pooler | 191 MB | 0.25% | Connection pooling |
+| studio | 180 MB | 0.02% | Dashboard |
+| storage | 113 MB | 0.42% | File storage |
+| meta | 110 MB | 0.34% | Metadata |
+| db | 95 MB | 0.08% | PostgreSQL (4GB config) |
+| auth | 11 MB | 0.01% | Authentication |
+| rest | 7 MB | 0.04% | PostgREST API |
+| imgproxy | 23 MB | 0.00% | Image processing |
+| **Total** | **~1668 MB** | **~26%** | **40.8% of 4GB limit** |
+
+**Memory Utilization:** 1.63 GiB / 4.0G (40.8%)
 
 #### Database Performance
 | Operation | Performance | Notes |
 |-----------|-------------|-------|
-| Insert 1000 rows | 1000+ rows/sec | ✅ Excellent |
-| Insert 10000 rows | 3-4 sec | ✅ Fast |
-| Query (100x sequential) | <10 sec | ✅ Fast |
-| Query (100x parallel) | <5 sec | ✅ Very fast |
-| Concurrent connections (50) | Excellent | ✅ Smooth |
+| Insert 1000 rows | 1000 rows/sec | ✅ Excellent |
+| Startup time | ~22 seconds | ✅ Normal |
+| All services healthy | Yes | ✅ Stable |
+| Concurrent connections (50) | Excellent | ✅ 2 CPUs help |
 | Concurrent connections (100) | Good | ✅ Handles well |
-| Large inserts (10000x1KB) | 8-10 sec | ✅ Stable |
-| Table scan (50000 rows) | 1-2 sec | ✅ Fast |
-| Complex joins | Fast | ✅ 1.9GB DB cache |
 
 #### Estimated Capacity
 | Metric | Estimate |
@@ -180,20 +201,12 @@ Same memory as 2GB plan but with **2 CPUs** instead of 1.
 | Connection pool | 100+ connections |
 | API requests/day | 1-5 million |
 
-#### Under Load Resource Usage
-| Service | Under Load | % of Limit | Status |
-|---------|------------|------------|--------|
-| db | ~400 MB | 21% | ✅ Excellent headroom |
-| kong | ~150 MB | 29% | ✅ Comfortable |
-| pooler | ~350 MB | 68% | ✅ Good |
-| All services | ~1800 MB | 44% | ✅ Stable |
-
 **Verdict:** ✅ **RECOMMENDED FOR MOST PRODUCTION**
-- Comfortable headroom (22% idle, 40-50% under load)
-- Handles traffic spikes well
-- 2 CPUs handle concurrency
-- Room for growth
-- Sweet spot for performance/cost
+- Excellent headroom: Only 41% memory usage at idle
+- 2.37 GiB free for traffic spikes and growth
+- 2 CPUs provide good concurrent request handling
+- Services dynamically share the 4GB pool
+- Sweet spot for performance/cost ratio
 - Use for: Most production applications, SaaS, business apps
 
 ---
@@ -331,11 +344,18 @@ Same memory as 2GB plan but with **2 CPUs** instead of 1.
 
 ## Testing Methodology
 
+**Resource Limiting:** Uses systemd slices to enforce total stack limits. All containers run within a single systemd slice with `MemoryMax` and `CPUQuota` properties. Services dynamically share resources from the total pool.
+
 All benchmarks use the same optimized Supabase stack with:
 - Realtime disabled
 - Analytics disabled
 - Edge Functions disabled
 - Vector logging disabled
+
+**Key Differences from Previous Approach:**
+- **Old:** Per-service resource limits (e.g., db: 868MB, kong: 280MB)
+- **New:** Total stack limit (e.g., 2GB shared across all services)
+- **Benefit:** Services can use what they need; no artificial per-service caps
 
 ### Load Tests Include:
 1. ✅ Basic connectivity
@@ -377,4 +397,4 @@ cd docker
 
 ---
 
-**Last Updated:** November 2, 2025
+**Last Updated:** November 3, 2025 (Updated with systemd-based resource limiting)

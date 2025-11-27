@@ -233,12 +233,15 @@ show_stats() {
     CPU_QUOTA=$(systemctl show supabase-limited.slice -p CPUQuotaPerSecUSec --value)
 
     # Convert memory to human readable
-    if [ "$MEM_MAX" -lt 1073741824 ]; then
+    if [ "$MEM_MAX" = "infinity" ]; then
+      echo "  MemoryMax: unlimited"
+    elif [ "$MEM_MAX" -lt 1073741824 ] 2>/dev/null; then
       MEM_DISPLAY="$(awk "BEGIN {printf \"%.0f\", $MEM_MAX/1048576}")M"
+      echo "  MemoryMax: $MEM_DISPLAY"
     else
       MEM_DISPLAY="$(awk "BEGIN {printf \"%.1f\", $MEM_MAX/1073741824}")G"
+      echo "  MemoryMax: $MEM_DISPLAY"
     fi
-    echo "  MemoryMax: $MEM_DISPLAY"
 
     # Parse CPU quota (format: "1s" = 100% of 1 CPU, "2s" = 200% = 2 CPUs)
     if [ "$CPU_QUOTA" != "infinity" ]; then
@@ -246,7 +249,7 @@ show_stats() {
       CPU_SECONDS=$(echo "$CPU_QUOTA" | sed 's/s$//')
       if [[ "$CPU_SECONDS" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
         CPU_PERCENT=$(awk "BEGIN {printf \"%.0f\", $CPU_SECONDS * 100}")
-        CPU_CORES=$(awk "BEGIN {printf \"%.1f\", $CPU_SECONDS}")
+        CPU_CORES=$(awk "BEGIN {BEGIN {printf \"%.1f\", $CPU_SECONDS}")
         echo "  CPUQuota: ${CPU_PERCENT}% (${CPU_CORES} CPUs)"
       else
         echo "  CPUQuota: $CPU_QUOTA"

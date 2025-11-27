@@ -127,7 +127,7 @@ start_plan() {
   # Create parent supabase slice if it doesn't exist
     if ! systemctl is-active --quiet supabase.slice 2>/dev/null; then
         echo -e "${YELLOW}Creating parent supabase.slice...${NC}"
-        sudo tee /run/systemd/system/supabase.slice > /dev/null << EOF
+              sudo bash -c 'cat > /etc/systemd/system/supabase.slice << "EOF"
 [Unit]
 Description=Supabase Services Slice
 Before=slices.target
@@ -135,7 +135,7 @@ Documentation=man:systemd.slice(7)
 
 [Slice]
 # No limits - parent slice for organization
-EOF
+EOF'
         sudo systemctl daemon-reload
         sudo systemctl start supabase.slice
         echo -e "${GREEN}✓ Created supabase.slice${NC}"
@@ -144,7 +144,7 @@ EOF
     SLICE_NAME="supabase-limited"
 
     # Create slice unit file
-    sudo tee /run/systemd/system/${SLICE_NAME}.slice > /dev/null << EOF
+      sudo bash -c 'cat > /etc/systemd/system/${SLICE_NAME}.slice << "EOF"
 [Unit]
 Description=Supabase Resource Limited Slice ($mem_limit RAM, $cpu_quota CPU)
 Before=slices.target
@@ -153,7 +153,7 @@ Documentation=man:systemd.slice(7)
 [Slice]
 MemoryMax=$mem_limit
 CPUQuota=$cpu_quota
-EOF
+EOF'
 
     # Reload systemd to recognize the new slice
     sudo systemctl daemon-reload

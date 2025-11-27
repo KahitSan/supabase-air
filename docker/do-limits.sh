@@ -16,15 +16,19 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 # Available plans
-declare -A PLANS
-PLANS[512mb]="512MB / 1 CPU ($4/mo)"
-PLANS[1gb]="1GB / 1 CPU ($6/mo)"
-PLANS[2gb]="2GB / 1 CPU ($12/mo)"
-PLANS[2gb-2cpu]="2GB / 2 CPUs ($18/mo)"
-PLANS[4gb]="4GB / 2 CPUs ($24/mo)"
-PLANS[8gb]="8GB / 4 CPUs ($48/mo)"
-PLANS[16gb]="16GB / 8 CPUs ($96/mo)"
-PLANS[unlimited]="No Limits (Development)"
+get_plan_info() {
+  case "$1" in
+    512mb) echo "512MB / 1 CPU (\$4/mo)" ;;
+    1gb) echo "1GB / 1 CPU (\$6/mo)" ;;
+    2gb) echo "2GB / 1 CPU (\$12/mo)" ;;
+    2gb-2cpu) echo "2GB / 2 CPUs (\$18/mo)" ;;
+    4gb) echo "4GB / 2 CPUs (\$24/mo)" ;;
+    8gb) echo "8GB / 4 CPUs (\$48/mo)" ;;
+    16gb) echo "16GB / 8 CPUs (\$96/mo)" ;;
+    unlimited) echo "No Limits (Development)" ;;
+    *) echo "" ;;
+  esac
+}
 
 show_usage() {
   echo -e "${BLUE}DigitalOcean Plan Benchmark Tool${NC}"
@@ -41,9 +45,14 @@ show_usage() {
   echo "  setup             - Quick setup (same as 'start unlimited')"
   echo ""
   echo "Available plans:"
-  for plan in "${!PLANS[@]}"; do
-    echo "  $plan - ${PLANS[$plan]}"
-  done
+  echo "  512mb - $(get_plan_info 512mb)"
+  echo "  1gb - $(get_plan_info 1gb)"
+  echo "  2gb - $(get_plan_info 2gb)"
+  echo "  2gb-2cpu - $(get_plan_info 2gb-2cpu)"
+  echo "  4gb - $(get_plan_info 4gb)"
+  echo "  8gb - $(get_plan_info 8gb)"
+  echo "  16gb - $(get_plan_info 16gb)"
+  echo "  unlimited - $(get_plan_info unlimited)"
   echo ""
   echo "Examples:"
   echo "  $0 start 4gb              # Start with 4GB plan limits"
@@ -57,13 +66,13 @@ show_usage() {
 start_plan() {
   local plan=$1
 
-  if [[ ! " ${!PLANS[@]} " =~ " ${plan} " ]]; then
+  if [ -z "$(get_plan_info "$plan")" ]; then
     echo -e "${RED}Error: Invalid plan '${plan}'${NC}"
     echo "Run '$0 list' to see available plans"
     exit 1
   fi
 
-  echo -e "${BLUE}Starting Supabase with ${PLANS[$plan]}${NC}"
+  echo -e "${BLUE}Starting Supabase with $(get_plan_info "$plan")${NC}"
   echo ""
 
   # Stop existing containers
@@ -265,7 +274,7 @@ run_benchmark() {
   local output_file="/tmp/benchmark-${plan}.txt"
 
   echo -e "${BLUE}========================================${NC}"
-  echo -e "${BLUE}Benchmarking: ${PLANS[$plan]}${NC}"
+  echo -e "${BLUE}Benchmarking: $(get_plan_info "$plan")${NC}"
   echo -e "${BLUE}========================================${NC}"
   echo ""
 
@@ -357,7 +366,7 @@ Generated: $(date)
 EOF
 
   for plan in 512mb 1gb 2gb 2gb-2cpu 4gb 8gb 16gb; do
-    echo "### $plan - ${PLANS[$plan]}" >> "$summary_file"
+    echo "### $plan - $(get_plan_info "$plan")" >> "$summary_file"
     echo "" >> "$summary_file"
     echo '```' >> "$summary_file"
     grep -A 10 "Initial Resource Usage:" "${results_dir}/benchmark-${plan}.txt" | head -15 >> "$summary_file" || echo "No data" >> "$summary_file"
@@ -374,7 +383,7 @@ list_plans() {
   printf "%-15s %s\n" "Plan" "Specs"
   printf "%-15s %s\n" "----" "-----"
   for plan in 512mb 1gb 2gb 2gb-2cpu 4gb 8gb 16gb unlimited; do
-    printf "%-15s %s\n" "$plan" "${PLANS[$plan]}"
+    printf "%-15s %s\n" "$plan" "$(get_plan_info "$plan")"
   done
 }
 

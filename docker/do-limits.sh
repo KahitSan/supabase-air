@@ -38,6 +38,7 @@ show_usage() {
   echo "  test-all         - Run benchmarks on all plans"
   echo "  stats            - Show current resource usage"
   echo "  list             - List available plans"
+  echo "  setup             - Quick setup (same as 'start unlimited')"
   echo ""
   echo "Available plans:"
   for plan in "${!PLANS[@]}"; do
@@ -47,6 +48,7 @@ show_usage() {
   echo "Examples:"
   echo "  $0 start 4gb              # Start with 4GB plan limits"
   echo "  $0 start unlimited        # Start without limits"
+  echo "  $0 setup                  # Quick setup without resource limits"
   echo "  $0 test 2gb               # Test 2GB plan"
   echo "  $0 test-all               # Benchmark all plans"
   echo "  $0 stats                  # Show resource usage"
@@ -113,6 +115,22 @@ start_plan() {
     echo -e "${BLUE}Starting with total limit: $mem_limit RAM, $cpu_quota CPU...${NC}"
     echo -e "${YELLOW}Using systemd slice to enforce limits on entire stack${NC}"
 
+  # Create parent supabase slice if it doesn't exist
+    if ! systemctl is-active --quiet supabase.slice 2>/dev/null; then
+        echo -e "${YELLOW}Creating parent supabase.slice...${NC}"
+        sudo tee /run/systemd/system/supabase.slice > /dev/null << EOF
+[Unit]
+Description=Supabase Services Slice
+Before=slices.target
+Documentation=man:systemd.slice(7)
+
+[Slice]
+# No limits - parent slice for organization
+EOF
+        sudo systemctl daemon-reload
+        sudo systemctl start supabase.slice
+        echo -e "${GREEN}✓ Created supabase.slice${NC}"
+    fi
     # Create a persistent systemd slice with resource limits
     SLICE_NAME="supabase-limited"
 
@@ -121,6 +139,7 @@ start_plan() {
 [Unit]
 Description=Supabase Resource Limited Slice ($mem_limit RAM, $cpu_quota CPU)
 Before=slices.target
+Documentation=man:systemd.slice(7)
 
 [Slice]
 MemoryMax=$mem_limit
@@ -214,12 +233,15 @@ show_stats() {
     CPU_QUOTA=$(systemctl show supabase-limited.slice -p CPUQuotaPerSecUSec --value)
 
     # Convert memory to human readable
-    if [ "$MEM_MAX" -lt 1073741824 ]; then
+    if [ "$MEM_MAX" = "infinity" ]; then
+      echo "  MemoryMax: unlimited"
+    elif [ "$MEM_MAX" -lt 1073741824 ] 2>/dev/null; then
       MEM_DISPLAY="$(awk "BEGIN {printf \"%.0f\", $MEM_MAX/1048576}")M"
+      echo "  MemoryMax: $MEM_DISPLAY"
     else
       MEM_DISPLAY="$(awk "BEGIN {printf \"%.1f\", $MEM_MAX/1073741824}")G"
+      echo "  MemoryMax: $MEM_DISPLAY"
     fi
-    echo "  MemoryMax: $MEM_DISPLAY"
 
     # Parse CPU quota (format: "1s" = 100% of 1 CPU, "2s" = 200% = 2 CPUs)
     if [ "$CPU_QUOTA" != "infinity" ]; then
@@ -227,7 +249,7 @@ show_stats() {
       CPU_SECONDS=$(echo "$CPU_QUOTA" | sed 's/s$//')
       if [[ "$CPU_SECONDS" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
         CPU_PERCENT=$(awk "BEGIN {printf \"%.0f\", $CPU_SECONDS * 100}")
-        CPU_CORES=$(awk "BEGIN {printf \"%.1f\", $CPU_SECONDS}")
+        CPU_CORES=$(awk "BEGIN {BEGIN {printf \"%.1f\", $CPU_SECONDS}")
         echo "  CPUQuota: ${CPU_PERCENT}% (${CPU_CORES} CPUs)"
       else
         echo "  CPUQuota: $CPU_QUOTA"
@@ -365,6 +387,9 @@ case "${1:-}" in
       exit 1
     fi
     start_plan "$2"
+    ;;
+  setup)
+    start_plan "unlimited"
     ;;
   stop)
     stop_services

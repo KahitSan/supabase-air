@@ -115,7 +115,7 @@ start_plan() {
     echo -e "${BLUE}Starting with total limit: $mem_limit RAM, $cpu_quota CPU...${NC}"
     echo -e "${YELLOW}Using systemd slice to enforce limits on entire stack${NC}"
 
-    # Create parent supabase slice if it doesn't exist
+  # Create parent supabase slice if it doesn't exist
     if ! systemctl is-active --quiet supabase.slice 2>/dev/null; then
         echo -e "${YELLOW}Creating parent supabase.slice...${NC}"
         sudo tee /run/systemd/system/supabase.slice > /dev/null << EOF
@@ -131,7 +131,6 @@ EOF
         sudo systemctl start supabase.slice
         echo -e "${GREEN}✓ Created supabase.slice${NC}"
     fi
-
     # Create a persistent systemd slice with resource limits
     SLICE_NAME="supabase-limited"
 

@@ -38,6 +38,7 @@ show_usage() {
   echo "  test-all         - Run benchmarks on all plans"
   echo "  stats            - Show current resource usage"
   echo "  list             - List available plans"
+  echo "  setup             - Quick setup (same as 'start unlimited')"
   echo ""
   echo "Available plans:"
   for plan in "${!PLANS[@]}"; do
@@ -47,6 +48,7 @@ show_usage() {
   echo "Examples:"
   echo "  $0 start 4gb              # Start with 4GB plan limits"
   echo "  $0 start unlimited        # Start without limits"
+  echo "  $0 setup                  # Quick setup without resource limits"
   echo "  $0 test 2gb               # Test 2GB plan"
   echo "  $0 test-all               # Benchmark all plans"
   echo "  $0 stats                  # Show resource usage"
@@ -113,6 +115,23 @@ start_plan() {
     echo -e "${BLUE}Starting with total limit: $mem_limit RAM, $cpu_quota CPU...${NC}"
     echo -e "${YELLOW}Using systemd slice to enforce limits on entire stack${NC}"
 
+    # Create parent supabase slice if it doesn't exist
+    if ! systemctl is-active --quiet supabase.slice 2>/dev/null; then
+        echo -e "${YELLOW}Creating parent supabase.slice...${NC}"
+        sudo tee /run/systemd/system/supabase.slice > /dev/null << EOF
+[Unit]
+Description=Supabase Services Slice
+Before=slices.target
+Documentation=man:systemd.slice(7)
+
+[Slice]
+# No limits - parent slice for organization
+EOF
+        sudo systemctl daemon-reload
+        sudo systemctl start supabase.slice
+        echo -e "${GREEN}✓ Created supabase.slice${NC}"
+    fi
+
     # Create a persistent systemd slice with resource limits
     SLICE_NAME="supabase-limited"
 
@@ -121,6 +140,7 @@ start_plan() {
 [Unit]
 Description=Supabase Resource Limited Slice ($mem_limit RAM, $cpu_quota CPU)
 Before=slices.target
+Documentation=man:systemd.slice(7)
 
 [Slice]
 MemoryMax=$mem_limit
@@ -365,6 +385,9 @@ case "${1:-}" in
       exit 1
     fi
     start_plan "$2"
+    ;;
+  setup)
+    start_plan "unlimited"
     ;;
   stop)
     stop_services

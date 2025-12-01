@@ -62,7 +62,7 @@ This repository is an **optimized fork** of the official Supabase self-hosting s
 
 ```bash
 # Clone the repository (SSH)
-git clone git@github.com:<org-name/your-repository-name>.git
+git clone git@github.com:KahitSan/supabase-air.git
 cd supabase-air
 
 # Create your environment file

@@ -50,10 +50,28 @@ This repository is an **optimized fork** of the official Supabase self-hosting s
 
 ---
 
+## Prerequisites
+
+- Docker & Docker Compose
+- 8GB+ RAM recommended (optimized stack uses ~1.6 GB)
+
+---
+
 ## Quick Start
 
 ```bash
-./setup.sh
+# Clone the repository (SSH)
+git clone git@github.com:KahitSan/supabase-air.git
+cd supabase-air
+
+# Create your environment file
+cp docker/.env.example docker/.env
+
+# Start services (recommended quick start: no resource limits)
+cd docker
+./do-limits.sh start unlimited
+# or ./do-limits.sh setup (alias for start unlimited)
+# ./setup.sh (legacy command for fix)
 ```
 
 Access dashboard: **http://localhost:8000**
@@ -146,13 +164,6 @@ supabase-air/
 ├── CLAUDE.md               # Development quick reference
 └── README.md
 ```
-
----
-
-## Prerequisites
-
-- Docker & Docker Compose
-- 8GB+ RAM recommended (optimized stack uses ~1.6 GB)
 
 ---
 

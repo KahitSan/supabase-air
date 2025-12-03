@@ -54,7 +54,6 @@ This repository is an **optimized fork** of the official Supabase self-hosting s
 
 - Docker & Docker Compose
 - 8GB+ RAM recommended (optimized stack uses ~1.6 GB)
-- Supabase CLI (to apply migrations during development)
 
 ---
 

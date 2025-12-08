@@ -68,10 +68,8 @@ cd supabase-air
 cp docker/.env.example docker/.env
 
 # Start services (recommended quick start: no resource limits)
-cd docker
-./do-limits.sh start unlimited
-# or ./do-limits.sh setup (alias for start unlimited)
-# ./setup.sh (legacy command for fix)
+./setup.sh
+# or ./docker/do-limits.sh setup (alias for start unlimited)
 ```
 
 Access dashboard: **http://localhost:8000**
@@ -86,7 +84,7 @@ Access dashboard: **http://localhost:8000**
 # Start Supabase without resource limits
 ./setup.sh
 
-# Reset everything (⚠️ deletes all data)
+# Reset everything (⚠️ deletes all data; if prompted, use your computer password)
 ./setup.sh --reset
 
 # View logs
@@ -122,7 +120,7 @@ See [DIGITALOCEAN-BENCHMARKS.md](./DIGITALOCEAN-BENCHMARKS.md) for all available
 | Service | URL/Port |
 |---------|----------|
 | Dashboard | http://localhost:8000 |
-| API | http://localhost:8000 |
+| API | http://localhost:3000 |
 | Database | localhost:54322 |
 
 Credentials are in `docker/.env`

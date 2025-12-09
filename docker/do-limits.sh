@@ -74,15 +74,15 @@ start_plan() {
 
   echo -e "${BLUE}Starting Supabase with $(get_plan_info "$plan")${NC}"
   echo ""
-
+  
   # Stop existing containers
   echo -e "${YELLOW}Stopping existing containers...${NC}"
   docker compose down > /dev/null 2>&1 || true
-
+  
   # Define resource limits for each plan
   local mem_limit cpu_quota
   case "$plan" in
-    512mb)
+    512mb) 
       mem_limit="512M"
       cpu_quota="100%"  # 1 CPU = 100%
       ;;
@@ -116,18 +116,25 @@ start_plan() {
       ;;
   esac
 
-  # Start with appropriate limits
+  # Helper: detect systemd
+  has_systemd() {
+    command -v systemctl >/dev/null 2>&1 && [ -d /etc/systemd/system ]
+  }
+
+  # Unlimited path
   if [ "$plan" == "unlimited" ]; then
     echo -e "${BLUE}Starting without resource limits...${NC}"
     docker compose up -d
   else
-    echo -e "${BLUE}Starting with total limit: $mem_limit RAM, $cpu_quota CPU...${NC}"
-    echo -e "${YELLOW}Using systemd slice to enforce limits on entire stack${NC}"
+    # Prefer systemd slice on Linux
+    if has_systemd; then
+      echo -e "${BLUE}Starting with total limit: $mem_limit RAM, $cpu_quota CPU...${NC}"
+      echo -e "${YELLOW}Using systemd slice to enforce limits on entire stack${NC}"
 
-  # Create parent supabase slice if it doesn't exist
-    if ! systemctl is-active --quiet supabase.slice 2>/dev/null; then
+        # Create parent supabase slice if it doesn't exist
+      if ! systemctl is-active --quiet supabase.slice 2>/dev/null; then
         echo -e "${YELLOW}Creating parent supabase.slice...${NC}"
-        sudo bash -c 'cat > /etc/systemd/system/supabase.slice << "EOF"
+        sudo tee /etc/systemd/system/supabase.slice >/dev/null <<'EOF'
 [Unit]
 Description=Supabase Services Slice
 Before=slices.target
@@ -135,16 +142,17 @@ Documentation=man:systemd.slice(7)
 
 [Slice]
 # No limits - parent slice for organization
-EOF'
+EOF
         sudo systemctl daemon-reload
         sudo systemctl start supabase.slice
         echo -e "${GREEN}✓ Created supabase.slice${NC}"
-    fi
+      fi
     # Create a persistent systemd slice with resource limits
-    SLICE_NAME="supabase-limited"
+      local SLICE_NAME="supabase-limited"
 
     # Create slice unit file
-    sudo bash -c 'cat > /etc/systemd/system/${SLICE_NAME}.slice << "EOF"
+      echo -e "${YELLOW}Creating ${SLICE_NAME}.slice...${NC}"
+      sudo tee /etc/systemd/system/${SLICE_NAME}.slice >/dev/null <<EOF
 [Unit]
 Description=Supabase Resource Limited Slice ($mem_limit RAM, $cpu_quota CPU)
 Before=slices.target
@@ -153,44 +161,58 @@ Documentation=man:systemd.slice(7)
 [Slice]
 MemoryMax=$mem_limit
 CPUQuota=$cpu_quota
-EOF'
+EOF
 
     # Reload systemd to recognize the new slice
-    sudo systemctl daemon-reload
-    sudo systemctl start ${SLICE_NAME}.slice
+      sudo systemctl daemon-reload
+      sudo systemctl start ${SLICE_NAME}.slice
 
     # Start Docker Compose with the cgroup parent
-    echo -e "${BLUE}Starting containers under ${SLICE_NAME}.slice...${NC}"
+      echo -e "${BLUE}Starting containers under ${SLICE_NAME}.slice...${NC}"
 
     # Create temporary compose file with cgroup_parent set
-    TEMP_OVERRIDE=$(mktemp --suffix=.yml)
-    cat > "$TEMP_OVERRIDE" << EOF_OVERRIDE
+      TEMP_OVERRIDE=$(mktemp --suffix=.yml)
+      cat > "$TEMP_OVERRIDE" << EOF_OVERRIDE
 # Temporary override to set cgroup_parent for all services
 services:
-  studio:
-    cgroup_parent: ${SLICE_NAME}.slice
-  kong:
-    cgroup_parent: ${SLICE_NAME}.slice
-  auth:
-    cgroup_parent: ${SLICE_NAME}.slice
-  rest:
-    cgroup_parent: ${SLICE_NAME}.slice
-  storage:
-    cgroup_parent: ${SLICE_NAME}.slice
-  imgproxy:
-    cgroup_parent: ${SLICE_NAME}.slice
-  meta:
-    cgroup_parent: ${SLICE_NAME}.slice
-  supavisor:
-    cgroup_parent: ${SLICE_NAME}.slice
-  db:
-    cgroup_parent: ${SLICE_NAME}.slice
+  studio:    
+    cgroup_parent: ${SLICE_NAME}.slice 
+  kong:      
+    cgroup_parent: ${SLICE_NAME}.slice 
+  auth:      
+    cgroup_parent: ${SLICE_NAME}.slice 
+  rest:      
+    cgroup_parent: ${SLICE_NAME}.slice 
+  storage:   
+    cgroup_parent: ${SLICE_NAME}.slice 
+  imgproxy:  
+    cgroup_parent: ${SLICE_NAME}.slice 
+  meta:      
+    cgroup_parent: ${SLICE_NAME}.slice 
+  supavisor: 
+    cgroup_parent: ${SLICE_NAME}.slice 
+  db:        
+    cgroup_parent: ${SLICE_NAME}.slice 
 EOF_OVERRIDE
 
-    docker compose -f docker-compose.yml -f docker-compose.do-${plan}.yml -f "$TEMP_OVERRIDE" up -d
-    rm -f "$TEMP_OVERRIDE"
+      docker compose -f docker-compose.yml -f docker-compose.do-${plan}.yml -f "$TEMP_OVERRIDE" up -d
+      rm -f "$TEMP_OVERRIDE"
 
-    echo -e "${GREEN}✓ Containers running under resource-limited slice${NC}"
+      echo -e "${GREEN}✓ Containers running under resource-limited slice${NC}"
+
+    else
+      # macOS / no systemd fallback:
+      echo -e "${YELLOW}Systemd not detected (likely macOS).${NC}"
+      echo -e "${BLUE}Using Docker Compose plan overrides only.${NC}"
+      echo -e "${YELLOW}Tip:${NC} Put per-service limits inside docker-compose.do-${plan}.yml"
+
+      # Compose resource limits on non-Swarm are typically defined per-service
+      # using supported fields (not the Swarm-only deploy section). :contentReference[oaicite:1]{index=1}
+      docker compose \
+        -f docker-compose.yml \
+        -f docker-compose.do-${plan}.yml \
+        up -d
+    fi
   fi
 
   echo ""
@@ -213,7 +235,7 @@ stop_services() {
   if systemctl is-active --quiet supabase-limited.slice 2>/dev/null; then
     echo -e "${YELLOW}Cleaning up systemd slice...${NC}"
     sudo systemctl stop supabase-limited.slice 2>/dev/null || true
-    sudo rm -f /run/systemd/system/supabase-limited.slice 2>/dev/null || true
+    sudo rm -f /etc/systemd/system/supabase-limited.slice 2>/dev/null || true
     sudo systemctl daemon-reload
   fi
 
@@ -258,7 +280,7 @@ show_stats() {
       CPU_SECONDS=$(echo "$CPU_QUOTA" | sed 's/s$//')
       if [[ "$CPU_SECONDS" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
         CPU_PERCENT=$(awk "BEGIN {printf \"%.0f\", $CPU_SECONDS * 100}")
-        CPU_CORES=$(awk "BEGIN {BEGIN {printf \"%.1f\", $CPU_SECONDS}")
+        CPU_CORES=$(awk "BEGIN {printf \"%.1f\", $CPU_SECONDS}")
         echo "  CPUQuota: ${CPU_PERCENT}% (${CPU_CORES} CPUs)"
       else
         echo "  CPUQuota: $CPU_QUOTA"

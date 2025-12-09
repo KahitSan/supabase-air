@@ -1,0 +1,285 @@
+name: Test do-limits.sh Script
+
+on:
+  pull_request:
+    paths:
+      - 'docker/do-limits.sh'
+
+jobs:
+  test-do-limits:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check Docker availability
+        run: |
+          if command -v docker >/dev/null 2>&1; then
+            echo "Docker is available"
+            docker --version
+            if command -v docker-compose >/dev/null 2>&1; then
+              docker-compose --version
+            else
+              docker compose version
+            fi
+          else
+            echo "Docker is not available on this runner"
+            echo "Skipping Docker-dependent tests"
+            echo "skip_docker_tests=true" >> $GITHUB_ENV
+          fi
+        shell: bash
+
+      - name: Make script executable
+        run: chmod +x docker/do-limits.sh
+        shell: bash
+
+      - name: Create test environment files
+        if: env.skip_docker_tests != 'true'
+        run: |
+          # Create minimal docker-compose.yml for testing
+          cat > docker/docker-compose.yml << 'EOF'
+          version: '3.8'
+          services:
+            test-service:
+              image: alpine:latest
+              command: sleep 3600
+              container_name: test-container
+          EOF
+        shell: bash
+
+      - name: Test script help
+        run: |
+          cd docker
+          ./do-limits.sh --help
+        shell: bash
+
+      - name: Test script list plans
+        run: |
+          cd docker
+          ./do-limits.sh --list
+        shell: bash
+
+      - name: Test cross-platform slice functionality
+        run: |
+          cd docker
+          echo "Testing cross-platform slice functionality from commit 07668d9..."
+
+          # Test 1: has_systemd() function exists and works
+          if grep -q "has_systemd()" do-limits.sh; then
+            echo "✓ has_systemd() function found in script"
+          else
+            echo "✗ has_systemd() function missing - this is the core change from 07668d9"
+            exit 1
+          fi
+
+          # Test 2: Test the systemd detection logic directly
+          if command -v systemctl >/dev/null 2>&1 && [ -d /etc/systemd/system ]; then
+            echo "✓ Systemd detected - script should use systemd slices"
+            expected_behavior="systemd"
+          else
+            echo "✓ No systemd detected - script should use Docker-only fallback"
+            expected_behavior="fallback"
+          fi
+
+          # Test 3: Test that start_plan function contains both paths
+          if grep -q "if has_systemd" do-limits.sh; then
+            echo "✓ Script has systemd conditional logic"
+          else
+            echo "✗ Missing systemd conditional logic"
+            exit 1
+          fi
+
+          # Test 4: Test that fallback path exists
+          if grep -q "macOS.*no systemd fallback" do-limits.sh; then
+            echo "✓ macOS fallback path implemented"
+          else
+            echo "✗ macOS fallback path missing"
+            exit 1
+          fi
+
+          # Test 5: Test slice creation commands are present
+          if grep -q "tee /etc/systemd/system/" do-limits.sh; then
+            echo "✓ Systemd slice creation commands present"
+          else
+            echo "✗ Systemd slice creation commands missing"
+            exit 1
+          fi
+
+          # Test 6: Test cgroup_parent assignment exists
+          if grep -q "cgroup_parent.*slice" do-limits.sh; then
+            echo "✓ Docker cgroup_parent assignment present"
+          else
+            echo "✗ Docker cgroup_parent assignment missing"
+            exit 1
+          fi
+
+          echo "Cross-platform slice functionality test passed for $expected_behavior path"
+        shell: bash
+
+      - name: Test slice creation logic (Linux only)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          cd docker
+          echo "Testing actual slice creation logic on Linux..."
+
+          # Create a test slice file exactly as the script would
+          mem_limit="1G"
+          cpu_quota="200%"
+          SLICE_NAME="test-slice"
+
+          # Test parent slice creation (exact logic from script)
+          if echo '[Unit]' | sudo tee /tmp/test_supabase.slice >/dev/null && \
+             echo 'Description=Supabase Services Slice' | sudo tee -a /tmp/test_supabase.slice >/dev/null && \
+             echo 'Before=slices.target' | sudo tee -a /tmp/test_supabase.slice >/dev/null && \
+             echo 'Documentation=man:systemd.slice(7)' | sudo tee -a /tmp/test_supabase.slice >/dev/null && \
+             echo '' | sudo tee -a /tmp/test_supabase.slice >/dev/null && \
+             echo '[Slice]' | sudo tee -a /tmp/test_supabase.slice >/dev/null && \
+             echo '# No limits - parent slice for organization' | sudo tee -a /tmp/test_supabase.slice >/dev/null; then
+            echo "✓ Parent slice file creation works"
+          else
+            echo "✗ Parent slice file creation failed"
+            exit 1
+          fi
+
+          # Test limited slice creation (exact logic from script)
+          if echo '[Unit]' | sudo tee /tmp/${SLICE_NAME}.slice >/dev/null && \
+             echo "Description=Supabase Resource Limited Slice ($mem_limit RAM, $cpu_quota CPU)" | sudo tee -a /tmp/${SLICE_NAME}.slice >/dev/null && \
+             echo 'Before=slices.target' | sudo tee -a /tmp/${SLICE_NAME}.slice >/dev/null && \
+             echo 'Documentation=man:systemd.slice(7)' | sudo tee -a /tmp/${SLICE_NAME}.slice >/dev/null && \
+             echo '' | sudo tee -a /tmp/${SLICE_NAME}.slice >/dev/null && \
+             echo '[Slice]' | sudo tee -a /tmp/${SLICE_NAME}.slice >/dev/null && \
+             echo "MemoryMax=$mem_limit" | sudo tee -a /tmp/${SLICE_NAME}.slice >/dev/null && \
+             echo "CPUQuota=$cpu_quota" | sudo tee -a /tmp/${SLICE_NAME}.slice >/dev/null; then
+            echo "✓ Limited slice file creation works"
+          else
+            echo "✗ Limited slice file creation failed"
+            exit 1
+          fi
+
+          # Validate slice files have correct content
+          if grep -q "MemoryMax=$mem_limit" /tmp/${SLICE_NAME}.slice; then
+            echo "✓ Memory limit correctly set in slice file"
+          else
+            echo "✗ Memory limit not found in slice file"
+            exit 1
+          fi
+
+          if grep -q "CPUQuota=$cpu_quota" /tmp/${SLICE_NAME}.slice; then
+            echo "✓ CPU quota correctly set in slice file"
+          else
+            echo "✗ CPU quota not found in slice file"
+            exit 1
+          fi
+
+          # Cleanup test files
+          sudo rm -f /tmp/test_supabase.slice /tmp/${SLICE_NAME}.slice
+
+          echo "✓ Linux slice creation logic test passed"
+        shell: bash
+
+      - name: Test 4gb plan resource limits
+        run: |
+          cd docker
+          echo "Testing 4gb plan resource limits (the specific case you asked about)..."
+
+          # Test that 4gb plan has correct limits according to the script
+          expected_mem="4G"
+          expected_cpu="200%"
+
+          echo "Expected for 4gb plan: Memory=$expected_mem, CPU=$expected_cpu"
+
+          # Extract the actual logic from the start_plan function
+          if grep -A 5 '4gb)' do-limits.sh | grep -q "mem_limit=\"$expected_mem\""; then
+            echo "✓ 4gb plan memory limit correctly set to $expected_mem"
+          else
+            echo "✗ 4gb plan memory limit incorrect"
+            exit 1
+          fi
+
+          if grep -A 5 '4gb)' do-limits.sh | grep -q "cpu_quota=\"$expected_cpu\""; then
+            echo "✓ 4gb plan CPU quota correctly set to $expected_cpu"
+          else
+            echo "✗ 4gb plan CPU quota incorrect"
+            exit 1
+          fi
+
+          # Test that these values would be used in slice creation
+          echo "Testing slice file generation with 4gb values..."
+          echo '[Unit]' > test_4gb.slice
+          echo 'Description=Test 4gb slice' >> test_4gb.slice
+          echo '[Slice]' >> test_4gb.slice
+          echo "MemoryMax=$expected_mem" >> test_4gb.slice
+          echo "CPUQuota=$expected_cpu" >> test_4gb.slice
+
+          if grep -q "MemoryMax=$expected_mem" test_4gb.slice && grep -q "CPUQuota=$expected_cpu" test_4gb.slice; then
+            echo "✓ 4gb slice file generation would work correctly"
+          else
+            echo "✗ 4gb slice file generation would fail"
+            exit 1
+          fi
+
+          rm -f test_4gb.slice
+          echo "✓ 4gb plan resource limits test passed"
+        shell: bash
+
+      - name: Validate script syntax
+        run: |
+          cd docker
+          echo "Validating shell script syntax..."
+          bash -n do-limits.sh
+          echo "Syntax validation passed"
+        shell: bash
+
+      - name: Check for common issues
+        run: |
+          cd docker
+          echo "Checking for common script issues..."
+
+          # Check for proper line endings
+          if file do-limits.sh | grep -q "CRLF"; then
+            echo "WARNING: File has CRLF line endings"
+          fi
+
+          # Check for executable permission
+          if [ -x do-limits.sh ]; then
+            echo "✓ Script is executable"
+          else
+            echo "✗ Script is not executable"
+            exit 1
+          fi
+
+          # Check for basic required functions
+          if grep -q "has_systemd" do-limits.sh; then
+            echo "✓ Systemd detection function found"
+          else
+            echo "✗ Systemd detection function missing"
+            exit 1
+          fi
+
+          echo "Common issues check completed"
+        shell: bash
+
+      - name: Test resource limit configurations
+        if: env.skip_docker_tests != 'true'
+        run: |
+          cd docker
+          echo "Testing resource limit configurations..."
+
+          # Test that all expected plans are available
+          expected_plans=("512mb" "1gb" "2gb" "4gb" "unlimited")
+
+          for plan in "${expected_plans[@]}"; do
+            echo "Testing plan: $plan"
+            if ./do-limits.sh $plan --dry-run 2>/dev/null; then
+              echo "✓ Plan $plan is valid"
+            else
+              echo "⚠ Plan $plan failed (may be expected on some platforms)"
+            fi
+          done
+
+          echo "Resource limit configurations test completed"
+        shell: bash

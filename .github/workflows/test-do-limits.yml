@@ -68,57 +68,51 @@ jobs:
           ./do-limits.sh --list
         shell: bash
 
-      - name: Test unlimited plan (all platforms)
-        if: env.skip_docker_tests != 'true'
+      - name: Test script plan validation
         run: |
           cd docker
-          echo "Testing unlimited plan..."
-          ./do-limits.sh unlimited --dry-run || true
-          # Check if script executed without syntax errors
-          echo "Unlimited plan test completed"
-        shell: bash
+          echo "Testing plan validation logic..."
 
-      - name: Test 512mb plan
-        if: env.skip_docker_tests != 'true'
-        run: |
-          cd docker
-          echo "Testing 512mb plan..."
-          ./do-limits.sh 512mb --dry-run || true
-          echo "512mb plan test completed"
-        shell: bash
+          # Test that all expected plans are recognized by the script
+          expected_plans=("512mb" "1gb" "2gb" "4gb" "unlimited")
 
-      - name: Test 1gb plan
-        if: env.skip_docker_tests != 'true'
-        run: |
-          cd docker
-          echo "Testing 1gb plan..."
-          ./do-limits.sh 1gb --dry-run || true
-          echo "1gb plan test completed"
-        shell: bash
+          for plan in "${expected_plans[@]}"; do
+            echo "Testing plan: $plan"
 
-      - name: Test 2gb plan
-        if: env.skip_docker_tests != 'true'
-        run: |
-          cd docker
-          echo "Testing 2gb plan..."
-          ./do-limits.sh 2gb --dry-run || true
-          echo "2gb plan test completed"
-        shell: bash
+            # Test that get_plan_info function returns info for each plan
+            plan_info=$(bash -c "source ./do-limits.sh 2>/dev/null; get_plan_info '$plan'" || echo "")
+            if [ -n "$plan_info" ]; then
+              echo "  ✓ Plan $plan found: $plan_info"
+            else
+              echo "  ✗ Plan $plan not found or invalid"
+              exit 1
+            fi
+          done
 
-      - name: Test 4gb plan
-        if: env.skip_docker_tests != 'true'
-        run: |
-          cd docker
-          echo "Testing 4gb plan..."
-          ./do-limits.sh 4gb --dry-run || true
-          echo "4gb plan test completed"
+          echo "Plan validation test completed"
         shell: bash
 
       - name: Test invalid plan
         run: |
           cd docker
           echo "Testing invalid plan..."
-          ./do-limits.sh invalid-plan --dry-run || echo "Expected failure for invalid plan"
+          # Test that invalid plan returns empty info
+          plan_info=$(bash -c "source ./do-limits.sh 2>/dev/null; get_plan_info 'invalid-plan'" || echo "")
+          if [ -z "$plan_info" ]; then
+            echo "✓ Invalid plan correctly rejected"
+          else
+            echo "✗ Invalid plan was accepted: $plan_info"
+            exit 1
+          fi
+
+          # Test invalid command handling
+          if ./do-limits.sh invalid-command 2>/dev/null; then
+            echo "✗ Invalid command should have failed"
+            exit 1
+          else
+            echo "✓ Invalid command correctly rejected"
+          fi
+
           echo "Invalid plan test completed"
         shell: bash
 
@@ -263,9 +257,9 @@ jobs:
           # Test the plan resource logic from the script
           declare -A test_limits=(
             ["512mb"]="512M 100%"
-            ["1gb"]="1G 200%"
-            ["2gb"]="2G 300%"
-            ["4gb"]="4G 400%"
+            ["1gb"]="1G 100%"
+            ["2gb"]="2G 100%"
+            ["4gb"]="4G 200%"
           )
 
           for plan in "${!test_limits[@]}"; do

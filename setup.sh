@@ -272,7 +272,7 @@ fi
 
 echo -e "${GREEN}Supabase is now running!${NC}\n"
 echo -e "Dashboard:     ${BLUE}http://localhost:8000${NC}"
-echo -e "API URL:       ${BLUE}http://localhost:8000${NC}"
+echo -e "API URL:       ${BLUE}http://localhost:3000${NC}"
 echo -e "Database:      ${BLUE}localhost:$EXTERNAL_PORT${NC}\n"
 
 echo -e "${YELLOW}Credentials:${NC}"

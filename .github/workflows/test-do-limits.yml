@@ -242,12 +242,13 @@ jobs:
 
           # Test YAML syntax of override file
           if command -v python3 >/dev/null 2>&1; then
-            python3 -c "import yaml; yaml.safe_load(open('test_override.yml'))" 2>/dev/null
-            if [ $? -eq 0 ]; then
+            if python3 -c "import yaml; yaml.safe_load(open('test_override.yml'))" 2>/dev/null; then
               echo "✓ Override file has valid YAML syntax"
             else
               echo "⚠ Override file YAML validation failed (may be missing python3-yaml)"
             fi
+          else
+            echo "⚠ Python3 not available for YAML validation"
           fi
 
           rm -f test_override.yml

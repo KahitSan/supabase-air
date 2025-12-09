@@ -11,16 +11,6 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        include:
-          - os: ubuntu-latest
-            shell: bash
-            docker_compose: docker-compose
-          - os: windows-latest
-            shell: bash
-            docker_compose: docker-compose
-          - os: macos-latest
-            shell: bash
-            docker_compose: docker-compose
 
     steps:
       - name: Checkout repository
@@ -38,7 +28,7 @@ jobs:
 
       - name: Make script executable
         run: chmod +x docker/do-limits.sh
-        shell: ${{ matrix.shell }}
+        shell: bash
 
       - name: Create test environment files
         run: |
@@ -51,19 +41,19 @@ jobs:
               command: sleep 3600
               container_name: test-container
           EOF
-        shell: ${{ matrix.shell }}
+        shell: bash
 
       - name: Test script help
         run: |
           cd docker
           ./do-limits.sh --help
-        shell: ${{ matrix.shell }}
+        shell: bash
 
       - name: Test script list plans
         run: |
           cd docker
           ./do-limits.sh --list
-        shell: ${{ matrix.shell }}
+        shell: bash
 
       - name: Test unlimited plan (all platforms)
         run: |
@@ -72,7 +62,7 @@ jobs:
           ./do-limits.sh unlimited --dry-run || true
           # Check if script executed without syntax errors
           echo "Unlimited plan test completed"
-        shell: ${{ matrix.shell }}
+        shell: bash
 
       - name: Test 512mb plan
         run: |
@@ -80,7 +70,7 @@ jobs:
           echo "Testing 512mb plan..."
           ./do-limits.sh 512mb --dry-run || true
           echo "512mb plan test completed"
-        shell: ${{ matrix.shell }}
+        shell: bash
 
       - name: Test 1gb plan
         run: |
@@ -88,7 +78,7 @@ jobs:
           echo "Testing 1gb plan..."
           ./do-limits.sh 1gb --dry-run || true
           echo "1gb plan test completed"
-        shell: ${{ matrix.shell }}
+        shell: bash
 
       - name: Test 2gb plan
         run: |
@@ -96,7 +86,7 @@ jobs:
           echo "Testing 2gb plan..."
           ./do-limits.sh 2gb --dry-run || true
           echo "2gb plan test completed"
-        shell: ${{ matrix.shell }}
+        shell: bash
 
       - name: Test 4gb plan
         run: |
@@ -104,7 +94,7 @@ jobs:
           echo "Testing 4gb plan..."
           ./do-limits.sh 4gb --dry-run || true
           echo "4gb plan test completed"
-        shell: ${{ matrix.shell }}
+        shell: bash
 
       - name: Test invalid plan
         run: |
@@ -112,7 +102,7 @@ jobs:
           echo "Testing invalid plan..."
           ./do-limits.sh invalid-plan --dry-run || echo "Expected failure for invalid plan"
           echo "Invalid plan test completed"
-        shell: ${{ matrix.shell }}
+        shell: bash
 
       - name: Test systemd detection (Linux only)
         if: matrix.os == 'ubuntu-latest'
@@ -122,7 +112,7 @@ jobs:
           # Test the has_systemd function indirectly by running a plan
           ./do-limits.sh 1gb --dry-run || true
           echo "Systemd detection test completed"
-        shell: ${{ matrix.shell }}
+        shell: bash
 
       - name: Test non-systemd path (macOS only)
         if: matrix.os == 'macos-latest'
@@ -132,7 +122,7 @@ jobs:
           # macOS should use the fallback path
           ./do-limits.sh 1gb --dry-run || true
           echo "macOS non-systemd test completed"
-        shell: ${{ matrix.shell }}
+        shell: bash
 
       - name: Test Windows compatibility
         if: matrix.os == 'windows-latest'
@@ -143,7 +133,7 @@ jobs:
           ./do-limits.sh --help
           ./do-limits.sh --list
           echo "Windows compatibility test completed"
-        shell: ${{ matrix.shell }}
+        shell: bash
 
       - name: Validate script syntax
         run: |
@@ -151,7 +141,7 @@ jobs:
           echo "Validating shell script syntax..."
           bash -n do-limits.sh
           echo "Syntax validation passed"
-        shell: ${{ matrix.shell }}
+        shell: bash
 
       - name: Check for common issues
         run: |
@@ -180,7 +170,7 @@ jobs:
           fi
 
           echo "Common issues check completed"
-        shell: ${{ matrix.shell }}
+        shell: bash
 
       - name: Test resource limit configurations
         run: |
@@ -200,4 +190,4 @@ jobs:
           done
 
           echo "Resource limit configurations test completed"
-        shell: ${{ matrix.shell }}
+        shell: bash

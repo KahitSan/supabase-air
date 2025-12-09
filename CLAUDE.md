@@ -3,7 +3,7 @@
 **READ THIS FIRST** in every new session to avoid re-analyzing the entire codebase.
 
 ---
-**Last updated**: 2025-11-02
+**Last updated**: 2025-12-09
 ---
 
 ## 🎯 Quick Navigation
@@ -61,6 +61,20 @@ Implemented backup script with comprehensive error handling.
 Added a backup script that dumps the database and copies volumes to a timestamped
 directory. Also updated the setup script to handle missing initialization files
 better by downloading them automatically.
+```
+
+### Issue Comments
+
+**Keep concise and brief:**
+- ✅ **Direct solution** - Focus on what was fixed and how
+- ✅ **Technical but simple** - Explain the fix without lengthy details
+- ✅ **Reference PRs** - Point to pull requests for implementation details
+- ❌ **NO long explanations** - Avoid verbose technical deep-dives
+- ❌ **NO stats or metrics** - Don't include file counts or line changes
+
+**Good issue comment example:**
+```
+Fixed by adding cross-platform detection with has_systemd() function. Script now uses systemd slices on Linux and falls back to Docker-only on macOS/Windows. See PR #9 for implementation details.
 ```
 
 ---

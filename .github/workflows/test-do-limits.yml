@@ -137,14 +137,13 @@ jobs:
           SLICE_NAME="test-slice"
 
           # Test parent slice creation (exact logic from script)
-          echo '[Unit]' | sudo tee /tmp/test_supabase.slice >/dev/null
-          echo 'Description=Supabase Services Slice' | sudo tee -a /tmp/test_supabase.slice >/dev/null
-          echo 'Before=slices.target' | sudo tee -a /tmp/test_supabase.slice >/dev/null
-          echo 'Documentation=man:systemd.slice(7)' | sudo tee -a /tmp/test_supabase.slice >/dev/null
-          echo '' | sudo tee -a /tmp/test_supabase.slice >/dev/null
-          echo '[Slice]' | sudo tee -a /tmp/test_supabase.slice >/dev/null
-          echo '# No limits - parent slice for organization' | sudo tee -a /tmp/test_supabase.slice >/dev/null
-          then
+          if echo '[Unit]' | sudo tee /tmp/test_supabase.slice >/dev/null && \
+             echo 'Description=Supabase Services Slice' | sudo tee -a /tmp/test_supabase.slice >/dev/null && \
+             echo 'Before=slices.target' | sudo tee -a /tmp/test_supabase.slice >/dev/null && \
+             echo 'Documentation=man:systemd.slice(7)' | sudo tee -a /tmp/test_supabase.slice >/dev/null && \
+             echo '' | sudo tee -a /tmp/test_supabase.slice >/dev/null && \
+             echo '[Slice]' | sudo tee -a /tmp/test_supabase.slice >/dev/null && \
+             echo '# No limits - parent slice for organization' | sudo tee -a /tmp/test_supabase.slice >/dev/null; then
             echo "✓ Parent slice file creation works"
           else
             echo "✗ Parent slice file creation failed"
@@ -152,15 +151,14 @@ jobs:
           fi
 
           # Test limited slice creation (exact logic from script)
-          echo '[Unit]' | sudo tee /tmp/${SLICE_NAME}.slice >/dev/null
-          echo "Description=Supabase Resource Limited Slice ($mem_limit RAM, $cpu_quota CPU)" | sudo tee -a /tmp/${SLICE_NAME}.slice >/dev/null
-          echo 'Before=slices.target' | sudo tee -a /tmp/${SLICE_NAME}.slice >/dev/null
-          echo 'Documentation=man:systemd.slice(7)' | sudo tee -a /tmp/${SLICE_NAME}.slice >/dev/null
-          echo '' | sudo tee -a /tmp/${SLICE_NAME}.slice >/dev/null
-          echo '[Slice]' | sudo tee -a /tmp/${SLICE_NAME}.slice >/dev/null
-          echo "MemoryMax=$mem_limit" | sudo tee -a /tmp/${SLICE_NAME}.slice >/dev/null
-          echo "CPUQuota=$cpu_quota" | sudo tee -a /tmp/${SLICE_NAME}.slice >/dev/null
-          then
+          if echo '[Unit]' | sudo tee /tmp/${SLICE_NAME}.slice >/dev/null && \
+             echo "Description=Supabase Resource Limited Slice ($mem_limit RAM, $cpu_quota CPU)" | sudo tee -a /tmp/${SLICE_NAME}.slice >/dev/null && \
+             echo 'Before=slices.target' | sudo tee -a /tmp/${SLICE_NAME}.slice >/dev/null && \
+             echo 'Documentation=man:systemd.slice(7)' | sudo tee -a /tmp/${SLICE_NAME}.slice >/dev/null && \
+             echo '' | sudo tee -a /tmp/${SLICE_NAME}.slice >/dev/null && \
+             echo '[Slice]' | sudo tee -a /tmp/${SLICE_NAME}.slice >/dev/null && \
+             echo "MemoryMax=$mem_limit" | sudo tee -a /tmp/${SLICE_NAME}.slice >/dev/null && \
+             echo "CPUQuota=$cpu_quota" | sudo tee -a /tmp/${SLICE_NAME}.slice >/dev/null; then
             echo "✓ Limited slice file creation works"
           else
             echo "✗ Limited slice file creation failed"

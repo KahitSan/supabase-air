@@ -4,11 +4,6 @@ on:
   pull_request:
     paths:
       - 'docker/do-limits.sh'
-  push:
-    branches:
-      - 'fix/do-limits-setup'
-    paths:
-      - 'docker/do-limits.sh'
 
 jobs:
   test-do-limits:

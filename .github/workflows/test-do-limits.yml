@@ -21,7 +21,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-    - name: Verify Docker installation
+      - name: Verify Docker installation
         run: |
           docker --version
           docker compose version

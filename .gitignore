@@ -22,3 +22,7 @@ yarn-error.log*
 # Editor directories
 .vscode/
 .idea/
+
+# Claude - AI assistant configuration and documentation
+CLAUDE.md
+.claude/

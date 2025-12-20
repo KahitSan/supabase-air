@@ -144,7 +144,6 @@ See `docker/.env` for all configuration.
 - **[WORKFLOWS.md](./WORKFLOWS.md)** - Daily operations, backups, and troubleshooting
 - **[OPTIMIZATION.md](./OPTIMIZATION.md)** - Resource usage metrics and disabled services
 - **[DIGITALOCEAN-BENCHMARKS.md](./DIGITALOCEAN-BENCHMARKS.md)** - Deployment sizing and resource limits
-- **[CLAUDE.md](./CLAUDE.md)** - Quick reference for development with Claude Code
 - **[Official Supabase Docs](https://supabase.com/docs/guides/self-hosting)** - Self-hosting guide
 
 ---
@@ -159,7 +158,6 @@ supabase-air/
 │   ├── docker-compose.yml  # Service definitions
 │   └── volumes/            # Persistent data (gitignored)
 ├── OPTIMIZATION.md         # Resource usage & optimization guide
-├── CLAUDE.md               # Development quick reference
 └── README.md
 ```
 

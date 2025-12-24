@@ -2,7 +2,31 @@
 
 This directory contains a complete Supabase development environment using Docker Compose with dashboard authentication and custom configurations.
 
+## Recommended: Root-Level Startup
+
+For the simplest experience, use the root-level startup script:
+
+```bash
+cd ..                   # Go to supabase-air root
+./start.sh             # Interactive plan selection
+./start.sh 4gb         # Start with 4GB plan
+./start.sh unlimited   # Start without limits
+./start.sh --reset     # Reset environment
+```
+
+The root `start.sh` script provides:
+- Automatic first-time setup detection
+- Interactive resource limit selection
+- Simplified workflow for daily use
+
+Continue reading below for docker-specific commands and advanced usage.
+
+---
+
 ## 🚀 Quick Start
+
+> **Recommended**: Use the root-level `../start.sh` script for simplest workflow.
+> The instructions below are for when you're already in the docker/ directory.
 
 ### Prerequisites
 

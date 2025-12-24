@@ -158,7 +158,8 @@ OPTIONS:
     [plan]      Optional. Resource limit plan to apply.
                 If omitted, shows interactive menu.
 
-    --reset     Reset environment (WARNING: deletes all data)
+    --reset     Reset environment only (stops services, deletes all data)
+                Does not start services after reset
     --help      Show this help message
 
 PLANS:
@@ -175,10 +176,10 @@ EXAMPLES:
     ./start.sh                    # Interactive menu
     ./start.sh unlimited          # Start without limits
     ./start.sh 4gb               # Start with 4GB plan limits
-    ./start.sh --reset           # Reset environment
+    ./start.sh --reset           # Reset only (doesn't start)
     ./start.sh --help            # Show this help
 
-For more information, see README.md and WORKFLOWS.md
+For more information, see README.md
 
 EOF
 }
@@ -193,9 +194,25 @@ main() {
     # Handle --reset flag
     if [ "$PLAN_ARG" = "--reset" ]; then
         print_header "Resetting Environment"
-        print_warning "Delegating to setup.sh --reset..."
-        "$SCRIPT_DIR/setup.sh" --reset
-        exit $?
+
+        print_warning "This will delete all data. Are you sure? [y/N]: "
+        read -r confirmation
+        if [[ ! "$confirmation" =~ ^[Yy]$ ]]; then
+            print_info "Reset cancelled."
+            exit 0
+        fi
+
+        print_info "Stopping and removing all containers and volumes..."
+        cd "$DOCKER_DIR"
+        docker compose down -v 2>/dev/null || true
+
+        print_info "Clearing database data..."
+        sudo rm -rf volumes/db/data/* 2>/dev/null || true
+
+        print_success "Reset complete!"
+        echo ""
+        print_info "Run ${BLUE}./start.sh${NC} when you're ready to set up and start again."
+        exit 0
     fi
 
     # Handle help

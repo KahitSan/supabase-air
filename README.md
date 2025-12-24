@@ -54,7 +54,7 @@ cd supabase-air
 ./start.sh 4gb              # 4GB plan
 ./start.sh unlimited        # No limits (default)
 
-# Reset environment (deletes all data)
+# Reset environment only (stops services, deletes all data)
 ./start.sh --reset
 ```
 
@@ -84,7 +84,7 @@ cp docker/.env.example docker/.env
 | `./start.sh` | Start with interactive plan selection |
 | `./start.sh 4gb` | Start with specific plan (recommended for production testing) |
 | `./start.sh unlimited` | Start without limits (development) |
-| `./start.sh --reset` | Reset environment (deletes all data) |
+| `./start.sh --reset` | Reset environment only (stops services, deletes all data) |
 | `./start.sh --help` | Show help |
 | `cd docker && ./do-limits.sh stats` | View resource usage |
 | `cd docker && docker compose logs -f` | View logs |
@@ -205,8 +205,11 @@ tar czf volumes_backup_$(date +%Y%m%d_%H%M%S).tar.gz volumes/
 ### Database Restore
 
 ```bash
-# Start fresh
+# Reset environment
 ./start.sh --reset
+
+# Start services
+./start.sh
 
 # Restore from backup
 cd docker
@@ -246,8 +249,9 @@ cd docker && docker compose ps
 # View error logs
 cd docker && docker compose logs -f
 
-# Full reset
+# Full reset and restart
 ./start.sh --reset
+./start.sh
 ```
 
 **Database Connection Refused**
@@ -277,6 +281,7 @@ grep "POSTGRES_EXTERNAL_PORT=" .env # Should be 54322
 If wrong, fix and restart:
 ```bash
 ./start.sh --reset
+./start.sh
 ```
 
 **Port Already in Use**
@@ -318,7 +323,7 @@ See `docker/.env` for all configuration.
 |-----|---------|
 | **Always use `./start.sh`** | Simplest way to start services with automatic setup detection |
 | **Never commit `docker/.env`** | Contains secrets |
-| **Use `--reset` flag liberally** | During development - Fresh start fixes most issues |
+| **Use `--reset` flag liberally** | During development - `./start.sh --reset` then `./start.sh` for fresh start |
 | **Check logs first** | When troubleshooting: `cd docker && docker compose logs -f` |
 | **Database port is 54322 externally, 5432 internally** | This is intentional to avoid conflicts |
 | **Interactive menu** | Run `./start.sh` without arguments to choose resource plan interactively |

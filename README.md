@@ -56,8 +56,9 @@ cd supabase-air
 
 # Other commands
 ./supabase.sh stop                    # Stop services
-./supabase.sh stats                   # View resource usage
-./supabase.sh status                  # Service health
+./supabase.sh status                  # Project info (URLs, credentials, keys)
+./supabase.sh container-status        # Container health status
+./supabase.sh resources               # Resource usage (CPU, memory)
 ./supabase.sh logs [service]          # View logs
 ./supabase.sh reset                   # Reset environment (deletes all data)
 ```
@@ -89,8 +90,9 @@ cp docker/.env.example docker/.env
 | `./supabase.sh start --plan=4gb` | Start with 4GB plan (recommended for production testing) |
 | `./supabase.sh start --plan=unlimited` | Start without limits (development) |
 | `./supabase.sh stop` | Stop all services |
-| `./supabase.sh stats` | View resource usage statistics |
-| `./supabase.sh status` | Show service health status |
+| `./supabase.sh status` | Show project status (URLs, credentials, API keys) |
+| `./supabase.sh container-status` | Show container health status |
+| `./supabase.sh resources` | View resource usage statistics (CPU, memory) |
 | `./supabase.sh logs [service]` | View logs (all or specific service) |
 | `./supabase.sh reset` | Reset environment (WARNING: deletes all data) |
 | `./supabase.sh help` | Show help message |
@@ -114,8 +116,8 @@ cp docker/.env.example docker/.env
 |---------|-------------|
 | `./scripts/setup.sh` | Manual setup (normally called by supabase.sh) |
 | `./scripts/do-limits.sh start 4gb` | Start with resource limits |
-| `./scripts/do-limits.sh stats` | Check resource usage |
-| `./scripts/dev-utils.sh status` | Service health check |
+| `./scripts/do-limits.sh stats` | Check resource usage (same as `resources`) |
+| `./scripts/dev-utils.sh status` | Service health check (same as `container-status`) |
 
 **Available Plans:**
 

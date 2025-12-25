@@ -151,14 +151,15 @@ USAGE:
     ./supabase.sh <command> [options]
 
 COMMANDS:
-    start [--plan=<plan>]   Start Supabase services
-                            If --plan not specified, shows interactive menu
-    stop                    Stop all Supabase services
-    stats                   Show resource usage statistics
-    status                  Show service health status
-    logs [service]          Show logs (all services or specific)
-    reset                   Reset environment (WARNING: deletes all data)
-    help                    Show this help message
+    start [--plan=<plan>]      Start Supabase services
+                               If --plan not specified, shows interactive menu
+    stop                       Stop all Supabase services
+    status                     Show project status (URLs, credentials, keys)
+    container-status           Show container health status
+    resources                  Show resource usage statistics
+    logs [service]             Show logs (all services or specific)
+    reset                      Reset environment (WARNING: deletes all data)
+    help                       Show this help message
 
 START OPTIONS:
     --plan=<plan>          Resource limit plan to apply
@@ -169,7 +170,9 @@ EXAMPLES:
     ./supabase.sh start --plan=unlimited   # Start without limits
     ./supabase.sh start --plan=4gb         # Start with 4GB plan
     ./supabase.sh stop                     # Stop services
-    ./supabase.sh stats                    # View resource usage
+    ./supabase.sh status                   # Show project info
+    ./supabase.sh container-status         # Container health
+    ./supabase.sh resources                # Resource usage
     ./supabase.sh reset                    # Reset environment
 
 For more information, see README.md
@@ -265,9 +268,9 @@ cmd_start() {
     echo ""
     print_success "Supabase services started successfully!"
     echo ""
-    print_info "Access dashboard at: ${BLUE}http://localhost:8000${NC}"
-    print_info "View status: ${BLUE}./supabase.sh status${NC}"
-    print_info "View stats: ${BLUE}./supabase.sh stats${NC}"
+    print_info "View project info: ${BLUE}./supabase.sh status${NC}"
+    print_info "View containers: ${BLUE}./supabase.sh container-status${NC}"
+    print_info "View resources: ${BLUE}./supabase.sh resources${NC}"
     print_info "Stop services: ${BLUE}./supabase.sh stop${NC}"
 }
 
@@ -277,14 +280,59 @@ cmd_stop() {
     "$SCRIPT_DIR/scripts/do-limits.sh" stop
 }
 
-# Command: stats
-cmd_stats() {
-    "$SCRIPT_DIR/scripts/do-limits.sh" stats
+# Command: status (project info)
+cmd_status() {
+    # Load environment variables
+    if [ ! -f "$DOCKER_DIR/.env" ]; then
+        print_error "No .env file found. Please start Supabase first."
+        exit 1
+    fi
+
+    # Extract values from .env using grep
+    local POSTGRES_PASSWORD=$(grep "^POSTGRES_PASSWORD=" "$DOCKER_DIR/.env" | cut -d'=' -f2-)
+    local DASHBOARD_USERNAME=$(grep "^DASHBOARD_USERNAME=" "$DOCKER_DIR/.env" | cut -d'=' -f2-)
+    local DASHBOARD_PASSWORD=$(grep "^DASHBOARD_PASSWORD=" "$DOCKER_DIR/.env" | cut -d'=' -f2-)
+    local ANON_KEY=$(grep "^ANON_KEY=" "$DOCKER_DIR/.env" | cut -d'=' -f2-)
+    local SERVICE_ROLE_KEY=$(grep "^SERVICE_ROLE_KEY=" "$DOCKER_DIR/.env" | cut -d'=' -f2-)
+
+    print_header "Supabase Project Status"
+
+    echo -e "${BLUE}🌐 Access URLs:${NC}"
+    echo "  Dashboard:     http://localhost:8000"
+    echo "  API URL:       http://localhost:8000"
+    echo "  Database:      postgresql://postgres:${POSTGRES_PASSWORD}@localhost:54322/postgres"
+    echo ""
+
+    echo -e "${BLUE}🔐 Credentials:${NC}"
+    echo "  Dashboard:     ${DASHBOARD_USERNAME} / ${DASHBOARD_PASSWORD}"
+    echo "  Database:      postgres / ${POSTGRES_PASSWORD}"
+    echo ""
+
+    echo -e "${BLUE}🔑 API Keys:${NC}"
+    echo "  Anon Key:      ${ANON_KEY}"
+    echo "  Service Key:   ${SERVICE_ROLE_KEY}"
+    echo ""
+
+    echo -e "${BLUE}📡 Connection Info:${NC}"
+    echo "  PostgreSQL:    localhost:54322"
+    echo "  Kong Gateway:  localhost:8000"
+    echo "  Pooler:        localhost:6543"
+    echo ""
+
+    echo -e "${BLUE}💡 Quick Tips:${NC}"
+    echo "  View containers: ./supabase.sh container-status"
+    echo "  View resources:  ./supabase.sh resources"
+    echo "  View logs:       ./supabase.sh logs [service]"
 }
 
-# Command: status
-cmd_status() {
+# Command: container-status
+cmd_container_status() {
     "$SCRIPT_DIR/scripts/dev-utils.sh" status
+}
+
+# Command: resources
+cmd_resources() {
+    "$SCRIPT_DIR/scripts/do-limits.sh" stats
 }
 
 # Command: logs
@@ -339,11 +387,14 @@ main() {
         stop)
             cmd_stop
             ;;
-        stats)
-            cmd_stats
-            ;;
         status)
             cmd_status
+            ;;
+        container-status)
+            cmd_container_status
+            ;;
+        resources)
+            cmd_resources
             ;;
         logs)
             shift

@@ -56,7 +56,7 @@ cd supabase-air
 
 # Other commands
 ./supabase.sh stop                    # Stop services
-./supabase.sh status                  # Project info (URLs, credentials, keys)
+./supabase.sh status                  # Project info (requires sudo)
 ./supabase.sh container-status        # Container health status
 ./supabase.sh resources               # Resource usage (CPU, memory)
 ./supabase.sh logs [service]          # View logs
@@ -90,7 +90,7 @@ cp docker/.env.example docker/.env
 | `./supabase.sh start --plan=4gb` | Start with 4GB plan (recommended for production testing) |
 | `./supabase.sh start --plan=unlimited` | Start without limits (development) |
 | `./supabase.sh stop` | Stop all services |
-| `./supabase.sh status` | Show project status (URLs, credentials, API keys) |
+| `./supabase.sh status` | Show project status (URLs, credentials, API keys) - requires sudo |
 | `./supabase.sh container-status` | Show container health status |
 | `./supabase.sh resources` | View resource usage statistics (CPU, memory) |
 | `./supabase.sh logs [service]` | View logs (all or specific service) |

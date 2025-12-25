@@ -155,6 +155,7 @@ COMMANDS:
                                If --plan not specified, shows interactive menu
     stop                       Stop all Supabase services
     status                     Show project status (URLs, credentials, keys)
+                               Requires sudo authentication for security
     container-status           Show container health status
     resources                  Show resource usage statistics
     logs [service]             Show logs (all services or specific)
@@ -282,6 +283,13 @@ cmd_stop() {
 
 # Command: status (project info)
 cmd_status() {
+    # Require sudo authentication for viewing sensitive information
+    print_info "Sudo access required to view sensitive credentials and API keys"
+    if ! sudo -v; then
+        print_error "Sudo authentication failed. Cannot display sensitive information."
+        exit 1
+    fi
+
     # Load environment variables
     if [ ! -f "$DOCKER_DIR/.env" ]; then
         print_error "No .env file found. Please start Supabase first."

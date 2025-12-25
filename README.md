@@ -48,17 +48,21 @@ git clone git@github.com:KahitSan/supabase-air.git
 cd supabase-air
 
 # Start Supabase (handles setup automatically)
-./start.sh
+./supabase.sh start
 
 # Or start with specific resource limits
-./start.sh 4gb              # 4GB plan
-./start.sh unlimited        # No limits (default)
+./supabase.sh start --plan=4gb        # 4GB plan
+./supabase.sh start --plan=unlimited  # No limits (default)
 
-# Reset environment only (stops services, deletes all data)
-./start.sh --reset
+# Other commands
+./supabase.sh stop                    # Stop services
+./supabase.sh stats                   # View resource usage
+./supabase.sh status                  # Service health
+./supabase.sh logs [service]          # View logs
+./supabase.sh reset                   # Reset environment (deletes all data)
 ```
 
-The `start.sh` script will automatically:
+The unified CLI will automatically:
 - Detect if first-time setup is needed
 - Configure environment and download required files
 - Start services with optional resource limits
@@ -70,50 +74,48 @@ Access dashboard: **http://localhost:8000**
 ```bash
 # If you prefer manual control
 cp docker/.env.example docker/.env
-./setup.sh
+./scripts/setup.sh
 ```
 
 ---
 
 ## Common Commands
 
-### Quick Start (Recommended)
+### Unified CLI (Recommended)
 
 | Command | Description |
 |---------|-------------|
-| `./start.sh` | Start with interactive plan selection |
-| `./start.sh 4gb` | Start with specific plan (recommended for production testing) |
-| `./start.sh unlimited` | Start without limits (development) |
-| `./start.sh --reset` | Reset environment only (stops services, deletes all data) |
-| `./start.sh --help` | Show help |
-| `./scripts/do-limits.sh stats` | View resource usage |
-| `cd docker && docker compose logs -f` | View logs |
-| `./scripts/do-limits.sh stop` | Stop services |
+| `./supabase.sh start` | Start with interactive plan selection |
+| `./supabase.sh start --plan=4gb` | Start with 4GB plan (recommended for production testing) |
+| `./supabase.sh start --plan=unlimited` | Start without limits (development) |
+| `./supabase.sh stop` | Stop all services |
+| `./supabase.sh stats` | View resource usage statistics |
+| `./supabase.sh status` | Show service health status |
+| `./supabase.sh logs [service]` | View logs (all or specific service) |
+| `./supabase.sh reset` | Reset environment (WARNING: deletes all data) |
+| `./supabase.sh help` | Show help message |
 
-### Advanced: Direct Commands
+### Advanced: Direct Docker Commands
 
-> **Note**: Most users should use `./start.sh` instead. These commands are for advanced use cases.
+> **Note**: Most users should use `./supabase.sh` instead. These commands are for advanced use cases.
 
 | Command | Description |
 |---------|-------------|
-| `./scripts/setup.sh` | Start without resource limits |
-| `./scripts/setup.sh --reset` | Reset everything (deletes all data) |
 | `cd docker && docker compose logs -f db` | View specific service logs |
 | `cd docker && docker compose ps` | Check service status |
 | `cd docker && docker compose restart db` | Restart specific service |
 | `cd docker && docker compose down` | Stop services |
 
-### Advanced: Resource Limits
+### Advanced: Helper Scripts
 
-> **Note**: Run these commands from the project root
+> **Note**: The unified CLI delegates to these scripts. Direct use is optional.
 
 | Command | Description |
 |---------|-------------|
-| `./scripts/do-limits.sh start 4gb` | Start with 4GB / 2 CPU plan ($24/mo) |
-| `./scripts/do-limits.sh start 2gb` | Start with 2GB / 1 CPU plan ($12/mo) |
-| `./scripts/do-limits.sh start unlimited` | Start without limits (default) |
+| `./scripts/setup.sh` | Manual setup (normally called by supabase.sh) |
+| `./scripts/do-limits.sh start 4gb` | Start with resource limits |
 | `./scripts/do-limits.sh stats` | Check resource usage |
-| `./scripts/do-limits.sh stop` | Stop services |
+| `./scripts/dev-utils.sh status` | Service health check |
 
 **Available Plans:**
 
@@ -206,10 +208,10 @@ tar czf volumes_backup_$(date +%Y%m%d_%H%M%S).tar.gz volumes/
 
 ```bash
 # Reset environment
-./start.sh --reset
+./supabase.sh reset
 
 # Start services
-./start.sh
+./supabase.sh start
 
 # Restore from backup
 cd docker
@@ -222,7 +224,7 @@ PGPASSWORD=$(grep POSTGRES_PASSWORD .env | cut -d'=' -f2) \
 ```bash
 cd docker && docker compose down
 tar xzf volumes_backup_20251102_120000.tar.gz
-./start.sh
+./supabase.sh start
 ```
 
 ---
@@ -250,8 +252,8 @@ cd docker && docker compose ps
 cd docker && docker compose logs -f
 
 # Full reset and restart
-./start.sh --reset
-./start.sh
+./supabase.sh reset
+./supabase.sh start
 ```
 
 **Database Connection Refused**
@@ -280,8 +282,8 @@ grep "POSTGRES_EXTERNAL_PORT=" .env # Should be 54322
 
 If wrong, fix and restart:
 ```bash
-./start.sh --reset
-./start.sh
+./supabase.sh reset
+./supabase.sh start
 ```
 
 **Port Already in Use**
@@ -313,7 +315,7 @@ See `docker/.env` for all configuration.
 |------|---------|-------------|
 | 1 | `cd docker && docker compose down` | Stop services |
 | 2 | `vim docker/.env` | Edit .env file |
-| 3 | `./start.sh` | Restart services |
+| 3 | `./supabase.sh start` | Restart services |
 
 ---
 
@@ -321,12 +323,12 @@ See `docker/.env` for all configuration.
 
 | Tip | Details |
 |-----|---------|
-| **Always use `./start.sh`** | Simplest way to start services with automatic setup detection |
+| **Always use `./supabase.sh start`** | Simplest way to start services with automatic setup detection |
 | **Never commit `docker/.env`** | Contains secrets |
-| **Use `--reset` flag liberally** | During development - `./start.sh --reset` then `./start.sh` for fresh start |
+| **Use `--reset` flag liberally** | During development - `./supabase.sh reset` then `./supabase.sh start` for fresh start |
 | **Check logs first** | When troubleshooting: `cd docker && docker compose logs -f` |
 | **Database port is 54322 externally, 5432 internally** | This is intentional to avoid conflicts |
-| **Interactive menu** | Run `./start.sh` without arguments to choose resource plan interactively |
+| **Interactive menu** | Run `./supabase.sh start` without arguments to choose resource plan interactively |
 
 ---
 
@@ -342,7 +344,7 @@ See `docker/.env` for all configuration.
 
 ```
 supabase-air/
-├── start.sh                # Unified startup script (recommended)
+├── supabase.sh             # Unified CLI (recommended)
 ├── scripts/                # Helper scripts
 │   ├── setup.sh           # Automated setup script
 │   ├── do-limits.sh       # Resource limiting helper

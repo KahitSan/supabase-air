@@ -1,15 +1,18 @@
 #!/usr/bin/env bash
 #
-# Supabase Air - Unified Startup Script
-# =====================================
+# Supabase Air - Unified CLI
+# ===========================
 #
-# Intelligently starts Supabase services with automatic setup detection
-# and optional resource limiting.
+# Manage Supabase services with a unified command-line interface.
 #
 # Usage:
-#   ./start.sh [plan]        # Start with optional resource plan
-#   ./start.sh --reset       # Reset environment (deletes all data)
-#   ./start.sh --help        # Show help
+#   ./supabase.sh start [--plan=<plan>]
+#   ./supabase.sh stop
+#   ./supabase.sh stats
+#   ./supabase.sh status
+#   ./supabase.sh logs [service]
+#   ./supabase.sh reset
+#   ./supabase.sh help
 #
 
 set -e
@@ -142,84 +145,58 @@ show_plan_menu() {
 # Show help message
 show_help() {
     cat << EOF
-Supabase Air - Unified Startup Script
+Supabase Air - Unified CLI
 
 USAGE:
-    ./start.sh [plan]
-    ./start.sh --reset
-    ./start.sh --help
+    ./supabase.sh <command> [options]
 
-DESCRIPTION:
-    Intelligently starts Supabase services. Automatically detects if first-time
-    setup is needed and runs it. Supports optional resource limiting for
-    testing different deployment configurations.
+COMMANDS:
+    start [--plan=<plan>]   Start Supabase services
+                            If --plan not specified, shows interactive menu
+    stop                    Stop all Supabase services
+    stats                   Show resource usage statistics
+    status                  Show service health status
+    logs [service]          Show logs (all services or specific)
+    reset                   Reset environment (WARNING: deletes all data)
+    help                    Show this help message
 
-OPTIONS:
-    [plan]      Optional. Resource limit plan to apply.
-                If omitted, shows interactive menu.
-
-    --reset     Reset environment only (stops services, deletes all data)
-                Does not start services after reset
-    --help      Show this help message
-
-PLANS:
-    unlimited   No resource limits (default for development)
-    512mb       512MB / 1 CPU (\$4/mo DO plan)
-    1gb         1GB / 1 CPU (\$6/mo DO plan)
-    2gb         2GB / 1 CPU (\$12/mo DO plan)
-    2gb-2cpu    2GB / 2 CPUs (\$18/mo DO plan)
-    4gb         4GB / 2 CPUs (\$24/mo DO plan) - Recommended
-    8gb         8GB / 4 CPUs (\$48/mo DO plan)
-    16gb        16GB / 8 CPUs (\$96/mo DO plan)
+START OPTIONS:
+    --plan=<plan>          Resource limit plan to apply
+                           Plans: unlimited, 512mb, 1gb, 2gb, 2gb-2cpu, 4gb, 8gb, 16gb
 
 EXAMPLES:
-    ./start.sh                    # Interactive menu
-    ./start.sh unlimited          # Start without limits
-    ./start.sh 4gb               # Start with 4GB plan limits
-    ./start.sh --reset           # Reset only (doesn't start)
-    ./start.sh --help            # Show this help
+    ./supabase.sh start                    # Interactive plan selection
+    ./supabase.sh start --plan=unlimited   # Start without limits
+    ./supabase.sh start --plan=4gb         # Start with 4GB plan
+    ./supabase.sh stop                     # Stop services
+    ./supabase.sh stats                    # View resource usage
+    ./supabase.sh reset                    # Reset environment
 
 For more information, see README.md
 
 EOF
 }
 
-# Main function
-main() {
-    print_header "Supabase Air - Unified Startup"
+# Command: start
+cmd_start() {
+    local plan=""
 
-    # Parse arguments
-    PLAN_ARG="${1:-}"
+    # Parse --plan= argument
+    for arg in "$@"; do
+        case $arg in
+            --plan=*)
+                plan="${arg#*=}"
+                shift
+                ;;
+            *)
+                print_error "Unknown argument: $arg"
+                echo "Usage: ./supabase.sh start [--plan=<plan>]"
+                exit 1
+                ;;
+        esac
+    done
 
-    # Handle --reset flag
-    if [ "$PLAN_ARG" = "--reset" ]; then
-        print_header "Resetting Environment"
-
-        print_warning "This will delete all data. Are you sure? [y/N]: "
-        read -r confirmation
-        if [[ ! "$confirmation" =~ ^[Yy]$ ]]; then
-            print_info "Reset cancelled."
-            exit 0
-        fi
-
-        print_info "Stopping and removing all containers and volumes..."
-        cd "$DOCKER_DIR"
-        docker compose down -v 2>/dev/null || true
-
-        print_info "Clearing database data..."
-        sudo rm -rf volumes/db/data/* 2>/dev/null || true
-
-        print_success "Reset complete!"
-        echo ""
-        print_info "Run ${BLUE}./start.sh${NC} when you're ready to set up and start again."
-        exit 0
-    fi
-
-    # Handle help
-    if [ "$PLAN_ARG" = "--help" ] || [ "$PLAN_ARG" = "-h" ]; then
-        show_help
-        exit 0
-    fi
+    print_header "Supabase Air - Start"
 
     # Check prerequisites
     print_info "Checking prerequisites..."
@@ -249,8 +226,7 @@ main() {
 
         print_success "Setup complete!"
         echo ""
-        print_info "You can now start services with resource limits if needed."
-        print_info "Run: ${BLUE}./start.sh [plan]${NC} to start with specific resource limits"
+        print_info "Run ${BLUE}./supabase.sh start${NC} to start services."
         exit 0
     fi
 
@@ -258,24 +234,22 @@ main() {
     print_header "Starting Supabase Services"
 
     # Determine which plan to use
-    local plan=""
-    if [ -n "$PLAN_ARG" ]; then
+    if [ -z "$plan" ]; then
+        # Show interactive menu
+        plan=$(show_plan_menu)
+        print_info "Selected plan: $plan"
+    else
         # Validate plan argument
-        case "$PLAN_ARG" in
+        case "$plan" in
             512mb|1gb|2gb|2gb-2cpu|4gb|8gb|16gb|unlimited)
-                plan="$PLAN_ARG"
                 print_info "Using specified plan: $plan"
                 ;;
             *)
-                print_error "Invalid plan: $PLAN_ARG"
+                print_error "Invalid plan: $plan"
                 print_info "Valid plans: 512mb, 1gb, 2gb, 2gb-2cpu, 4gb, 8gb, 16gb, unlimited"
                 exit 1
                 ;;
         esac
-    else
-        # Show interactive menu
-        plan=$(show_plan_menu)
-        print_info "Selected plan: $plan"
     fi
 
     # Delegate to do-limits.sh
@@ -292,8 +266,99 @@ main() {
     print_success "Supabase services started successfully!"
     echo ""
     print_info "Access dashboard at: ${BLUE}http://localhost:8000${NC}"
-    print_info "To view status: ${BLUE}./scripts/do-limits.sh stats${NC}"
-    print_info "To stop: ${BLUE}./scripts/do-limits.sh stop${NC}"
+    print_info "View status: ${BLUE}./supabase.sh status${NC}"
+    print_info "View stats: ${BLUE}./supabase.sh stats${NC}"
+    print_info "Stop services: ${BLUE}./supabase.sh stop${NC}"
+}
+
+# Command: stop
+cmd_stop() {
+    print_header "Supabase Air - Stop"
+    "$SCRIPT_DIR/scripts/do-limits.sh" stop
+}
+
+# Command: stats
+cmd_stats() {
+    "$SCRIPT_DIR/scripts/do-limits.sh" stats
+}
+
+# Command: status
+cmd_status() {
+    "$SCRIPT_DIR/scripts/dev-utils.sh" status
+}
+
+# Command: logs
+cmd_logs() {
+    local service="${1:-}"
+    if [ -n "$service" ]; then
+        "$SCRIPT_DIR/scripts/dev-utils.sh" logs "$service"
+    else
+        "$SCRIPT_DIR/scripts/dev-utils.sh" logs
+    fi
+}
+
+# Command: reset
+cmd_reset() {
+    print_header "Resetting Environment"
+
+    print_warning "This will delete all data. Are you sure? [y/N]: "
+    read -r confirmation
+    if [[ ! "$confirmation" =~ ^[Yy]$ ]]; then
+        print_info "Reset cancelled."
+        exit 0
+    fi
+
+    print_info "Stopping and removing all containers and volumes..."
+    cd "$DOCKER_DIR"
+    docker compose down -v 2>/dev/null || true
+
+    print_info "Clearing database data..."
+    sudo rm -rf volumes/db/data/* 2>/dev/null || true
+
+    print_success "Reset complete!"
+    echo ""
+    print_info "Run ${BLUE}./supabase.sh start${NC} when you're ready to set up and start again."
+}
+
+# Main function
+main() {
+    local command="${1:-}"
+
+    # Handle empty command or help
+    if [ -z "$command" ] || [ "$command" = "help" ] || [ "$command" = "--help" ] || [ "$command" = "-h" ]; then
+        show_help
+        exit 0
+    fi
+
+    # Route to command handlers
+    case "$command" in
+        start)
+            shift
+            cmd_start "$@"
+            ;;
+        stop)
+            cmd_stop
+            ;;
+        stats)
+            cmd_stats
+            ;;
+        status)
+            cmd_status
+            ;;
+        logs)
+            shift
+            cmd_logs "$@"
+            ;;
+        reset)
+            cmd_reset
+            ;;
+        *)
+            print_error "Unknown command: $command"
+            echo ""
+            echo "Run './supabase.sh help' for usage information"
+            exit 1
+            ;;
+    esac
 }
 
 # Error handling

@@ -5,6 +5,11 @@
 
 set -e
 
+# Change to docker directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DOCKER_DIR="$SCRIPT_DIR/../docker"
+cd "$DOCKER_DIR"
+
 show_help() {
     echo "🔧 Supabase Development Utilities"
     echo ""

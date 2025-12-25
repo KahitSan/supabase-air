@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# Change to docker directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DOCKER_DIR="$SCRIPT_DIR/../docker"
+cd "$DOCKER_DIR"
+
 # Load environment variables (properly handle spaces)
 while IFS='=' read -r key value; do
     # Skip comments and empty lines

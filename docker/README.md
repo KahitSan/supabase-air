@@ -1,258 +1,176 @@
-# Supabase Development Environment
+# Docker Directory
 
-This directory contains a complete Supabase development environment using Docker Compose with dashboard authentication and custom configurations.
+Docker Compose configuration for Supabase services.
 
-## 🚀 Quick Start
-
-### Prerequisites
-
-- Docker Desktop installed and running
-- Git (for version control)
-- Basic familiarity with Docker Compose
-
-### Initial Setup
-
-1. **Clone and navigate to the project:**
-   ```bash
-   cd docker/
-   ```
-
-2. **Run the setup script:**
-   ```bash
-   ./setup.sh
-   ```
-
-   This will:
-   - Check if Docker is running
-   - Verify environment configuration
-   - Pull the latest Docker images
-   - Start all Supabase services
-   - Show you the access URLs and credentials
-
-3. **Access your services:**
-   - **Dashboard**: http://localhost:8000 (requires login)
-   - **Studio**: http://localhost:54323 (direct access)
-   - **Database**: `postgresql://postgres:***@localhost:54322/postgres`
-   - **API**: http://localhost:8000/rest/v1/
-   - **Email Testing**: http://localhost:54324
-
-## 🔐 Authentication
-
-Your setup includes dashboard authentication for security:
-
-- **Username**: `kahitsan`
-- **Password**: Check your `.env` file for `DASHBOARD_PASSWORD`
-
-## 📁 Project Structure
-
-```
-docker/
-├── .env                 # Environment configuration (secured)
-├── .env.example         # Template for environment variables
-├── docker-compose.yml   # Main service definitions
-├── setup.sh            # Initial setup script
-├── reset.sh             # Database reset utility
-├── dev-utils.sh         # Development utilities
-├── volumes/             # Persistent data storage
-│   ├── db/             # Database data and configs
-│   ├── storage/        # File uploads
-│   └── functions/      # Edge functions
-└── README.md           # This file
-```
-
-## 🛠️ Development Commands
-
-### Basic Operations
-
-```bash
-# Start services
-./setup.sh
-
-# View service status
-./dev-utils.sh status
-
-# View logs (all services)
-./dev-utils.sh logs
-
-# View logs (specific service)
-./dev-utils.sh logs db
-
-# Restart all services
-./dev-utils.sh restart
-
-# Restart specific service
-./dev-utils.sh restart auth
-```
-
-### Database Operations
-
-```bash
-# Connect to database shell
-./dev-utils.sh psql
-
-# Open container shell
-./dev-utils.sh shell
-
-# Create backup
-./dev-utils.sh backup
-
-# Restore from backup
-./dev-utils.sh restore
-
-# Reset database (WARNING: destroys all data)
-./reset.sh
-```
-
-### Maintenance
-
-```bash
-# Update to latest images
-./dev-utils.sh update
-
-# Clean up Docker resources
-./dev-utils.sh clean
-
-# Show environment info
-./dev-utils.sh env
-
-# Stop all services
-docker compose down
-```
-
-## 🔧 Configuration
-
-### Environment Variables
-
-Key variables in `.env`:
-
-- `DASHBOARD_USERNAME/PASSWORD` - Dashboard login credentials
-- `POSTGRES_PASSWORD` - Database password
-- `JWT_SECRET` - JWT signing secret
-- `ANON_KEY/SERVICE_ROLE_KEY` - API access keys
-
-### Custom Features
-
-This setup includes:
-
-- **Dashboard Authentication** - Secure access to admin panel
-- **GitHub OAuth** - Pre-configured (requires client ID/secret)
-- **Custom Schemas** - `public`, `content`, `storage`, `graphql_public`
-- **File Storage** - Local file storage with custom buckets
-- **Email Testing** - Inbucket for email development
-- **Analytics** - Built-in logging and analytics
-
-### Port Mapping
-
-- `8000` - Kong API Gateway + Dashboard
-- `54321` - Direct API access (if needed)
-- `54322` - Direct database access
-- `54323` - Supabase Studio
-- `54324` - Email testing (Inbucket)
-- `4000` - Analytics dashboard
-
-## 🐛 Troubleshooting
-
-### Common Issues
-
-**Services won't start:**
-```bash
-# Check Docker is running
-docker info
-
-# View detailed logs
-./dev-utils.sh logs
-
-# Reset everything
-./reset.sh
-```
-
-**Can't access dashboard:**
-- Verify credentials in `.env` file
-- Check if port 8000 is available
-- Ensure all services are healthy: `./dev-utils.sh status`
-
-**Database connection issues:**
-```bash
-# Test database connectivity
-./dev-utils.sh psql
-
-# Check database logs
-./dev-utils.sh logs db
-
-# Reset database volume
-./reset.sh
-```
-
-**Port conflicts:**
-- Modify ports in `.env` file
-- Restart services: `./setup.sh`
-
-### Logs and Debugging
-
-```bash
-# Follow all logs
-./dev-utils.sh logs
-
-# Specific service logs
-./dev-utils.sh logs kong
-./dev-utils.sh logs db
-./dev-utils.sh logs auth
-
-# Docker compose logs
-docker compose logs -f [service_name]
-```
-
-## 🚀 Production Considerations
-
-**⚠️ This setup is for development only!**
-
-Before production:
-
-1. **Change all default passwords and secrets**
-2. **Use proper SSL certificates**
-3. **Configure external database**
-4. **Set up proper backup strategies**
-5. **Review security configurations**
-6. **Use environment-specific configs**
-
-## 🤝 Team Development
-
-### For New Developers
-
-1. Clone the repository
-2. Run `cd docker && ./setup.sh`
-3. Wait for services to start
-4. Access dashboard at http://localhost:8000
-
-### Sharing Changes
-
-- Environment changes: Update `.env.example`
-- Service changes: Modify `docker-compose.yml`
-- Always test with `./setup.sh` after changes
-
-### Best Practices
-
-- Use `./dev-utils.sh backup` before major changes
-- Keep the `.env` file secure (never commit it)
-- Use `./dev-utils.sh status` to verify service health
-- Clean up regularly with `./dev-utils.sh clean`
-
-## 📚 Additional Resources
-
-- [Supabase Documentation](https://supabase.com/docs)
-- [Docker Compose Reference](https://docs.docker.com/compose/)
-- [PostgreSQL Documentation](https://www.postgresql.org/docs/)
-
-## 🆘 Getting Help
-
-If you encounter issues:
-
-1. Check this README
-2. Run `./dev-utils.sh status` for service health
-3. Check logs with `./dev-utils.sh logs`
-4. Try resetting with `./reset.sh`
-5. Ask the team for help
+> **Note**: For general setup and usage instructions, see the [main README](../README.md). This file only documents docker-specific configuration.
+>
+> **Utility scripts** have been moved to `../scripts/` directory for better organization.
 
 ---
 
-**Happy coding! 🚀**
+## Directory Structure
+
+```
+docker/
+├── .env                       # Environment configuration (gitignored)
+├── .env.example               # Environment template
+├── docker-compose.yml         # Main service definitions
+├── docker-compose.do-*.yml    # Resource limit configs (8 files)
+└── volumes/                   # Persistent data (gitignored)
+    ├── db/                    # PostgreSQL data and initialization
+    ├── storage/               # File storage
+    ├── api/                   # Kong configuration
+    ├── logs/                  # Vector logging config
+    └── pooler/                # Supavisor config
+```
+
+---
+
+## Utility Scripts
+
+> **Note**: All utility scripts are located in `../scripts/` directory. Run them from the project root.
+
+### do-limits.sh
+
+Resource limiting and DigitalOcean plan simulation.
+
+| Command | Description |
+|---------|-------------|
+| `./scripts/do-limits.sh start <plan>` | Start with specific resource limits |
+| `./scripts/do-limits.sh setup` | Start without limits (alias for `start unlimited`) |
+| `./scripts/do-limits.sh stop` | Stop all services |
+| `./scripts/do-limits.sh stats` | Show resource usage |
+| `./scripts/do-limits.sh test <plan>` | Run benchmark on specific plan |
+| `./scripts/do-limits.sh test-all` | Benchmark all plans |
+| `./scripts/do-limits.sh list` | List available plans |
+
+**Available plans**: `512mb`, `1gb`, `2gb`, `2gb-2cpu`, `4gb`, `8gb`, `16gb`, `unlimited`
+
+### dev-utils.sh
+
+Development and maintenance utilities.
+
+| Command | Description |
+|---------|-------------|
+| `./scripts/dev-utils.sh status` | Show service health |
+| `./scripts/dev-utils.sh logs [service]` | Stream logs (all or specific) |
+| `./scripts/dev-utils.sh restart [service]` | Restart services |
+| `./scripts/dev-utils.sh shell` | Open bash in database container |
+| `./scripts/dev-utils.sh psql` | Connect to PostgreSQL |
+| `./scripts/dev-utils.sh backup` | Create database backup |
+| `./scripts/dev-utils.sh restore` | Restore from backup |
+| `./scripts/dev-utils.sh update` | Pull latest images and restart |
+| `./scripts/dev-utils.sh clean` | Clean up Docker resources |
+| `./scripts/dev-utils.sh env` | Show environment configuration |
+
+### show-status.sh
+
+Displays comprehensive system information including service versions, health status, URLs, credentials, and configuration.
+
+```bash
+./scripts/show-status.sh
+```
+
+### load-test.sh
+
+Performance testing script used by `do-limits.sh` for benchmarking database operations under different resource constraints.
+
+---
+
+## Configuration Files
+
+### .env
+
+Environment variables for all services. Copy from `.env.example` to get started.
+
+**Key variables:**
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `POSTGRES_PASSWORD` | Database password | (required) |
+| `POSTGRES_PORT` | Internal Docker port | `5432` |
+| `POSTGRES_EXTERNAL_PORT` | Host machine port | `54322` |
+| `JWT_SECRET` | JWT signing secret | (required) |
+| `ANON_KEY` | Anonymous API key | (auto-generated) |
+| `SERVICE_ROLE_KEY` | Service role API key | (auto-generated) |
+| `DASHBOARD_USERNAME` | Dashboard login | `kahitsan` |
+| `DASHBOARD_PASSWORD` | Dashboard password | (required) |
+
+### docker-compose.yml
+
+Main service definitions for 9 active containers:
+- `kong` - API gateway
+- `db` - PostgreSQL database
+- `auth` - GoTrue authentication
+- `rest` - PostgREST API
+- `storage` - File storage
+- `meta` - Database metadata
+- `studio` - Web dashboard
+- `pooler` - Supavisor connection pooler
+- `imgproxy` - Image optimization
+
+**Disabled services** (can be re-enabled in OPTIMIZATION.md):
+- `realtime` - WebSocket subscriptions
+- `analytics` - Logflare logging
+- `functions` - Edge functions runtime
+- `vector` - Log aggregation
+
+### docker-compose.do-*.yml
+
+Resource limit override files for DigitalOcean plan simulation:
+- `docker-compose.do-512mb.yml`
+- `docker-compose.do-1gb.yml`
+- `docker-compose.do-2gb.yml`
+- `docker-compose.do-2gb-2cpu.yml`
+- `docker-compose.do-4gb.yml`
+- `docker-compose.do-8gb.yml`
+- `docker-compose.do-16gb.yml`
+
+Used by `do-limits.sh` to apply memory and CPU constraints.
+
+---
+
+## Port Mappings
+
+| Internal Port | External Port | Service | Description |
+|---------------|---------------|---------|-------------|
+| 8000 | 8000 | Kong | API Gateway + Dashboard |
+| 8443 | 8443 | Kong | HTTPS Gateway |
+| 5432 | 54322 | PostgreSQL | Database |
+| 6543 | 6543 | Supavisor | Connection pooler |
+| 3000 | - | Studio | Dashboard (via Kong) |
+| 3000 | - | PostgREST | API (via Kong) |
+| 9999 | - | GoTrue | Auth (via Kong) |
+| 5000 | - | Storage | File storage (via Kong) |
+
+**Note**: Most services are accessed through Kong (port 8000), not directly.
+
+---
+
+## Direct Docker Compose Commands
+
+For advanced users who want direct control:
+
+```bash
+# Start services
+docker compose up -d
+
+# Stop services
+docker compose down
+
+# View logs
+docker compose logs -f [service_name]
+
+# Check status
+docker compose ps
+
+# Restart service
+docker compose restart [service_name]
+
+# Rebuild service
+docker compose up -d --force-recreate [service_name]
+```
+
+---
+
+For general usage, troubleshooting, and setup instructions, see the [main README](../README.md).

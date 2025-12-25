@@ -86,9 +86,9 @@ cp docker/.env.example docker/.env
 | `./start.sh unlimited` | Start without limits (development) |
 | `./start.sh --reset` | Reset environment only (stops services, deletes all data) |
 | `./start.sh --help` | Show help |
-| `cd docker && ./do-limits.sh stats` | View resource usage |
+| `./scripts/do-limits.sh stats` | View resource usage |
 | `cd docker && docker compose logs -f` | View logs |
-| `cd docker && ./do-limits.sh stop` | Stop services |
+| `./scripts/do-limits.sh stop` | Stop services |
 
 ### Advanced: Direct Commands
 
@@ -96,8 +96,8 @@ cp docker/.env.example docker/.env
 
 | Command | Description |
 |---------|-------------|
-| `./setup.sh` | Start without resource limits |
-| `./setup.sh --reset` | Reset everything (deletes all data) |
+| `./scripts/setup.sh` | Start without resource limits |
+| `./scripts/setup.sh --reset` | Reset everything (deletes all data) |
 | `cd docker && docker compose logs -f db` | View specific service logs |
 | `cd docker && docker compose ps` | Check service status |
 | `cd docker && docker compose restart db` | Restart specific service |
@@ -105,15 +105,15 @@ cp docker/.env.example docker/.env
 
 ### Advanced: Resource Limits
 
-> **Note**: Run these commands from the `docker/` directory
+> **Note**: Run these commands from the project root
 
 | Command | Description |
 |---------|-------------|
-| `./do-limits.sh start 4gb` | Start with 4GB / 2 CPU plan ($24/mo) |
-| `./do-limits.sh start 2gb` | Start with 2GB / 1 CPU plan ($12/mo) |
-| `./do-limits.sh start unlimited` | Start without limits (default) |
-| `./do-limits.sh stats` | Check resource usage |
-| `./do-limits.sh stop` | Stop services |
+| `./scripts/do-limits.sh start 4gb` | Start with 4GB / 2 CPU plan ($24/mo) |
+| `./scripts/do-limits.sh start 2gb` | Start with 2GB / 1 CPU plan ($12/mo) |
+| `./scripts/do-limits.sh start unlimited` | Start without limits (default) |
+| `./scripts/do-limits.sh stats` | Check resource usage |
+| `./scripts/do-limits.sh stop` | Stop services |
 
 **Available Plans:**
 
@@ -343,13 +343,16 @@ See `docker/.env` for all configuration.
 ```
 supabase-air/
 ├── start.sh                # Unified startup script (recommended)
-├── setup.sh                # Automated setup script
+├── scripts/                # Helper scripts
+│   ├── setup.sh           # Automated setup script
+│   ├── do-limits.sh       # Resource limiting helper
+│   ├── dev-utils.sh       # Development utilities
+│   ├── show-status.sh     # System status display
+│   └── load-test.sh       # Performance testing
 ├── docker/
-│   ├── .env                # Configuration (gitignored)
-│   ├── docker-compose.yml  # Service definitions
-│   ├── do-limits.sh        # Resource limiting helper
-│   ├── dev-utils.sh        # Development utilities
-│   └── volumes/            # Persistent data (gitignored)
+│   ├── .env               # Configuration (gitignored)
+│   ├── docker-compose.yml # Service definitions
+│   └── volumes/           # Persistent data (gitignored)
 ├── OPTIMIZATION.md         # Resource usage & optimization guide
 ├── DIGITALOCEAN-BENCHMARKS.md  # Deployment benchmarks
 └── README.md               # This file

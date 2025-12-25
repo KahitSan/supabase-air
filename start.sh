@@ -244,8 +244,8 @@ main() {
     # Check if setup is needed
     if needs_setup; then
         print_header "Running First-Time Setup"
-        print_info "Delegating to setup.sh..."
-        "$SCRIPT_DIR/setup.sh"
+        print_info "Delegating to scripts/setup.sh..."
+        "$SCRIPT_DIR/scripts/setup.sh"
 
         print_success "Setup complete!"
         echo ""
@@ -282,18 +282,18 @@ main() {
     cd "$DOCKER_DIR"
     if [ "$plan" = "unlimited" ]; then
         print_info "Starting without resource limits..."
-        ./do-limits.sh setup
+        ../scripts/do-limits.sh setup
     else
         print_info "Starting with $plan resource limits..."
-        ./do-limits.sh start "$plan"
+        ../scripts/do-limits.sh start "$plan"
     fi
 
     echo ""
     print_success "Supabase services started successfully!"
     echo ""
     print_info "Access dashboard at: ${BLUE}http://localhost:8000${NC}"
-    print_info "To view status: ${BLUE}cd docker && ./do-limits.sh stats${NC}"
-    print_info "To stop: ${BLUE}cd docker && ./do-limits.sh stop${NC}"
+    print_info "To view status: ${BLUE}./scripts/do-limits.sh stats${NC}"
+    print_info "To stop: ${BLUE}./scripts/do-limits.sh stop${NC}"
 }
 
 # Error handling

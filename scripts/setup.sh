@@ -16,7 +16,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DOCKER_DIR="$SCRIPT_DIR/docker"
+DOCKER_DIR="$SCRIPT_DIR/../docker"
 
 # Colors for output
 RED='\033[0;31m'
@@ -292,6 +292,6 @@ echo -e "   ${BLUE}./scripts/db-push-local.sh${NC}\n"
 
 print_info "To view logs: ${BLUE}cd docker && docker compose logs -f${NC}"
 print_info "To stop: ${BLUE}cd docker && docker compose down${NC}"
-print_info "To reset completely: ${BLUE}./setup.sh --reset${NC}"
+print_info "To reset completely: ${BLUE}./scripts/setup.sh --reset${NC}"
 
 echo ""

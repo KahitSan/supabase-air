@@ -6,7 +6,8 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$SCRIPT_DIR"
+DOCKER_DIR="$SCRIPT_DIR/../docker"
+cd "$DOCKER_DIR"
 
 # Colors
 RED='\033[0;31m'
@@ -316,7 +317,7 @@ run_benchmark() {
   # Run load test
   echo ""
   echo -e "${BLUE}🧪 Running load test...${NC}"
-  ./load-test.sh 2>&1 | tee -a "${output_file}" || true
+  "$SCRIPT_DIR/load-test.sh" 2>&1 | tee -a "${output_file}" || true
 
   # Capture final stats
   echo ""

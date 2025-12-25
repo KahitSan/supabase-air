@@ -1,8 +1,10 @@
 # Docker Directory
 
-Docker Compose configuration and utility scripts for Supabase services.
+Docker Compose configuration for Supabase services.
 
-> **Note**: For general setup and usage instructions, see the [main README](../README.md). This file only documents docker-specific utilities and configuration.
+> **Note**: For general setup and usage instructions, see the [main README](../README.md). This file only documents docker-specific configuration.
+>
+> **Utility scripts** have been moved to `../scripts/` directory for better organization.
 
 ---
 
@@ -14,10 +16,6 @@ docker/
 ├── .env.example               # Environment template
 ├── docker-compose.yml         # Main service definitions
 ├── docker-compose.do-*.yml    # Resource limit configs (8 files)
-├── do-limits.sh              # Resource limiting utility
-├── dev-utils.sh              # Development utilities
-├── show-status.sh            # System status display
-├── load-test.sh              # Performance testing
 └── volumes/                   # Persistent data (gitignored)
     ├── db/                    # PostgreSQL data and initialization
     ├── storage/               # File storage
@@ -30,19 +28,21 @@ docker/
 
 ## Utility Scripts
 
+> **Note**: All utility scripts are located in `../scripts/` directory. Run them from the project root.
+
 ### do-limits.sh
 
 Resource limiting and DigitalOcean plan simulation.
 
 | Command | Description |
 |---------|-------------|
-| `./do-limits.sh start <plan>` | Start with specific resource limits |
-| `./do-limits.sh setup` | Start without limits (alias for `start unlimited`) |
-| `./do-limits.sh stop` | Stop all services |
-| `./do-limits.sh stats` | Show resource usage |
-| `./do-limits.sh test <plan>` | Run benchmark on specific plan |
-| `./do-limits.sh test-all` | Benchmark all plans |
-| `./do-limits.sh list` | List available plans |
+| `./scripts/do-limits.sh start <plan>` | Start with specific resource limits |
+| `./scripts/do-limits.sh setup` | Start without limits (alias for `start unlimited`) |
+| `./scripts/do-limits.sh stop` | Stop all services |
+| `./scripts/do-limits.sh stats` | Show resource usage |
+| `./scripts/do-limits.sh test <plan>` | Run benchmark on specific plan |
+| `./scripts/do-limits.sh test-all` | Benchmark all plans |
+| `./scripts/do-limits.sh list` | List available plans |
 
 **Available plans**: `512mb`, `1gb`, `2gb`, `2gb-2cpu`, `4gb`, `8gb`, `16gb`, `unlimited`
 
@@ -52,23 +52,23 @@ Development and maintenance utilities.
 
 | Command | Description |
 |---------|-------------|
-| `./dev-utils.sh status` | Show service health |
-| `./dev-utils.sh logs [service]` | Stream logs (all or specific) |
-| `./dev-utils.sh restart [service]` | Restart services |
-| `./dev-utils.sh shell` | Open bash in database container |
-| `./dev-utils.sh psql` | Connect to PostgreSQL |
-| `./dev-utils.sh backup` | Create database backup |
-| `./dev-utils.sh restore` | Restore from backup |
-| `./dev-utils.sh update` | Pull latest images and restart |
-| `./dev-utils.sh clean` | Clean up Docker resources |
-| `./dev-utils.sh env` | Show environment configuration |
+| `./scripts/dev-utils.sh status` | Show service health |
+| `./scripts/dev-utils.sh logs [service]` | Stream logs (all or specific) |
+| `./scripts/dev-utils.sh restart [service]` | Restart services |
+| `./scripts/dev-utils.sh shell` | Open bash in database container |
+| `./scripts/dev-utils.sh psql` | Connect to PostgreSQL |
+| `./scripts/dev-utils.sh backup` | Create database backup |
+| `./scripts/dev-utils.sh restore` | Restore from backup |
+| `./scripts/dev-utils.sh update` | Pull latest images and restart |
+| `./scripts/dev-utils.sh clean` | Clean up Docker resources |
+| `./scripts/dev-utils.sh env` | Show environment configuration |
 
 ### show-status.sh
 
 Displays comprehensive system information including service versions, health status, URLs, credentials, and configuration.
 
 ```bash
-./show-status.sh
+./scripts/show-status.sh
 ```
 
 ### load-test.sh

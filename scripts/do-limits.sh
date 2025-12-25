@@ -69,7 +69,7 @@ start_plan() {
 
   if [ -z "$(get_plan_info "$plan")" ]; then
     echo -e "${RED}Error: Invalid plan '${plan}'${NC}"
-    echo "Run '$0 list' to see available plans"
+    echo "Run './scripts/do-limits.sh list' to see available plans"
     exit 1
   fi
 
@@ -225,7 +225,7 @@ EOF_OVERRIDE
   echo ""
   docker compose ps
   echo ""
-  echo "Run '$0 stats' to see resource usage"
+  echo "Run './scripts/do-limits.sh stats' to see resource usage"
 }
 
 stop_services() {

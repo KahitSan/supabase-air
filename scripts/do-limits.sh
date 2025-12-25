@@ -225,7 +225,7 @@ EOF_OVERRIDE
   echo ""
   docker compose ps
   echo ""
-  echo "Run './scripts/do-limits.sh stats' to see resource usage"
+  echo "Run './supabase.sh stats' to see resource usage"
 }
 
 stop_services() {

@@ -2,35 +2,11 @@
 
 This branch contains an optimized Supabase configuration that disables unused services to reduce resource consumption and improve performance.
 
-## Disabled Services
+## Overview
 
-The following services have been disabled in this optimization:
+This optimized configuration disables unused services to reduce resource consumption. See [README.md](./README.md) Service Architecture section for the complete list of active and disabled services.
 
-### Docker Services (docker-compose.yml)
-- **realtime** - WebSocket realtime subscriptions
-- **analytics** - Logflare analytics and logging
-- **functions** - Edge Functions runtime
-- **vector** - Log collection service
-
-### API Routes (kong.yml)
-- **GraphQL** - `/graphql/v1/*` endpoint
-- **Realtime** - `/realtime/v1/*` endpoints
-- **Functions** - `/functions/v1/*` endpoint
-- **Analytics** - `/analytics/v1/*` endpoint
-
-## Active Services
-
-The following core services remain active:
-
-- **db** - PostgreSQL database
-- **rest** - PostgREST API (REST endpoints)
-- **auth** - GoTrue authentication
-- **storage** - Storage API with image transformation
-- **imgproxy** - Image transformation
-- **kong** - API gateway
-- **studio** - Supabase Studio dashboard
-- **meta** - Postgres metadata API
-- **supavisor** - Connection pooler
+**Resource Savings:** ~450-700 MB compared to full stack (total usage ~1.6 GB vs ~2.1-2.3 GB)
 
 ## How to Re-enable Services
 
@@ -118,36 +94,6 @@ Analytics requires multiple changes:
 | Functions Route | docker/volumes/api/kong.yml | `# OPTIMIZATION: Edge Functions routes disabled` |
 | Analytics Route | docker/volumes/api/kong.yml | `# OPTIMIZATION: Analytics routes disabled` |
 
-## Resource Savings
-
-**Measured Resource Usage (Optimized Stack):**
-
-- **Total Memory**: ~1.61 GB (1,613 MiB)
-- **Total CPU**: ~11.5% (idle)
-- **Containers**: 9 running
-
-**Disabled Services (Not Consuming Resources):**
-- realtime
-- analytics (logflare)
-- edge-functions
-- vector
-
-**Estimated Savings**: 450-700 MB compared to full stack
-
-**Individual Container Usage:**
-
-| Container | Memory | CPU % |
-|-----------|--------|-------|
-| kong | 941.8 MiB | 0.20% |
-| pooler | 178.3 MiB | 0.91% |
-| studio | 144.8 MiB | 0.00% |
-| storage | 102.7 MiB | 4.75% |
-| db | 102.4 MiB | 0.04% |
-| meta | 77.9 MiB | 0.62% |
-| imgproxy | 25.2 MiB | 0.00% |
-| auth | 23.0 MiB | 0.00% |
-| rest | 13.2 MiB | 0.09% |
-
 ## Use Cases
 
 This optimized configuration is ideal for:
@@ -164,9 +110,12 @@ After re-enabling services, verify they work:
 
 ```bash
 # Check all services are healthy
-docker compose ps
+./supabase.sh container-status
 
-# Test specific endpoints (replace with your URL and keys)
+# Or use direct docker command
+cd docker && docker compose ps
+
+# Test specific endpoints (get your keys with: ./supabase.sh status)
 # Realtime
 curl -X GET 'http://localhost:8000/realtime/v1/api/tenants'
 

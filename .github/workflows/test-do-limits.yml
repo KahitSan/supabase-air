@@ -3,7 +3,7 @@ name: Test do-limits.sh Script
 on:
   pull_request:
     paths:
-      - 'docker/do-limits.sh'
+      - 'scripts/do-limits.sh'
 
 jobs:
   test-do-limits:
@@ -34,7 +34,7 @@ jobs:
         shell: bash
 
       - name: Make script executable
-        run: chmod +x docker/do-limits.sh
+        run: chmod +x scripts/do-limits.sh
         shell: bash
 
       - name: Create test environment files
@@ -52,24 +52,19 @@ jobs:
         shell: bash
 
       - name: Test script help
-        run: |
-          cd docker
-          ./do-limits.sh --help
+        run: ./scripts/do-limits.sh --help
         shell: bash
 
       - name: Test script list plans
-        run: |
-          cd docker
-          ./do-limits.sh --list
+        run: ./scripts/do-limits.sh --list
         shell: bash
 
       - name: Test cross-platform slice functionality
         run: |
-          cd docker
           echo "Testing cross-platform slice functionality from commit 07668d9..."
 
           # Test 1: has_systemd() function exists and works
-          if grep -q "has_systemd()" do-limits.sh; then
+          if grep -q "has_systemd()" scripts/do-limits.sh; then
             echo "✓ has_systemd() function found in script"
           else
             echo "✗ has_systemd() function missing - this is the core change from 07668d9"
@@ -86,7 +81,7 @@ jobs:
           fi
 
           # Test 3: Test that start_plan function contains both paths
-          if grep -q "if has_systemd" do-limits.sh; then
+          if grep -q "if has_systemd" scripts/do-limits.sh; then
             echo "✓ Script has systemd conditional logic"
           else
             echo "✗ Missing systemd conditional logic"
@@ -94,7 +89,7 @@ jobs:
           fi
 
           # Test 4: Test that fallback path exists
-          if grep -q "macOS.*no systemd fallback" do-limits.sh; then
+          if grep -q "macOS.*no systemd fallback" scripts/do-limits.sh; then
             echo "✓ macOS fallback path implemented"
           else
             echo "✗ macOS fallback path missing"
@@ -102,7 +97,7 @@ jobs:
           fi
 
           # Test 5: Test slice creation commands are present
-          if grep -q "tee /etc/systemd/system/" do-limits.sh; then
+          if grep -q "tee /etc/systemd/system/" scripts/do-limits.sh; then
             echo "✓ Systemd slice creation commands present"
           else
             echo "✗ Systemd slice creation commands missing"
@@ -110,7 +105,7 @@ jobs:
           fi
 
           # Test 6: Test cgroup_parent assignment exists
-          if grep -q "cgroup_parent.*slice" do-limits.sh; then
+          if grep -q "cgroup_parent.*slice" scripts/do-limits.sh; then
             echo "✓ Docker cgroup_parent assignment present"
           else
             echo "✗ Docker cgroup_parent assignment missing"
@@ -123,7 +118,6 @@ jobs:
       - name: Test slice creation logic (Linux only)
         if: matrix.os == 'ubuntu-latest'
         run: |
-          cd docker
           echo "Testing actual slice creation logic on Linux..."
 
           # Create a test slice file exactly as the script would
@@ -183,7 +177,6 @@ jobs:
 
       - name: Test 4gb plan resource limits
         run: |
-          cd docker
           echo "Testing 4gb plan resource limits (the specific case you asked about)..."
 
           # Test that 4gb plan has correct limits according to the script
@@ -193,14 +186,14 @@ jobs:
           echo "Expected for 4gb plan: Memory=$expected_mem, CPU=$expected_cpu"
 
           # Extract the actual logic from the start_plan function
-          if grep -A 5 '4gb)' do-limits.sh | grep -q "mem_limit=\"$expected_mem\""; then
+          if grep -A 5 '4gb)' scripts/do-limits.sh | grep -q "mem_limit=\"$expected_mem\""; then
             echo "✓ 4gb plan memory limit correctly set to $expected_mem"
           else
             echo "✗ 4gb plan memory limit incorrect"
             exit 1
           fi
 
-          if grep -A 5 '4gb)' do-limits.sh | grep -q "cpu_quota=\"$expected_cpu\""; then
+          if grep -A 5 '4gb)' scripts/do-limits.sh | grep -q "cpu_quota=\"$expected_cpu\""; then
             echo "✓ 4gb plan CPU quota correctly set to $expected_cpu"
           else
             echo "✗ 4gb plan CPU quota incorrect"
@@ -228,24 +221,22 @@ jobs:
 
       - name: Validate script syntax
         run: |
-          cd docker
           echo "Validating shell script syntax..."
-          bash -n do-limits.sh
+          bash -n scripts/do-limits.sh
           echo "Syntax validation passed"
         shell: bash
 
       - name: Check for common issues
         run: |
-          cd docker
           echo "Checking for common script issues..."
 
           # Check for proper line endings
-          if file do-limits.sh | grep -q "CRLF"; then
+          if file scripts/do-limits.sh | grep -q "CRLF"; then
             echo "WARNING: File has CRLF line endings"
           fi
 
           # Check for executable permission
-          if [ -x do-limits.sh ]; then
+          if [ -x scripts/do-limits.sh ]; then
             echo "✓ Script is executable"
           else
             echo "✗ Script is not executable"
@@ -253,7 +244,7 @@ jobs:
           fi
 
           # Check for basic required functions
-          if grep -q "has_systemd" do-limits.sh; then
+          if grep -q "has_systemd" scripts/do-limits.sh; then
             echo "✓ Systemd detection function found"
           else
             echo "✗ Systemd detection function missing"
@@ -266,7 +257,6 @@ jobs:
       - name: Test resource limit configurations
         if: env.skip_docker_tests != 'true'
         run: |
-          cd docker
           echo "Testing resource limit configurations..."
 
           # Test that all expected plans are available
@@ -274,7 +264,7 @@ jobs:
 
           for plan in "${expected_plans[@]}"; do
             echo "Testing plan: $plan"
-            if ./do-limits.sh $plan --dry-run 2>/dev/null; then
+            if ./scripts/do-limits.sh $plan --dry-run 2>/dev/null; then
               echo "✓ Plan $plan is valid"
             else
               echo "⚠ Plan $plan failed (may be expected on some platforms)"

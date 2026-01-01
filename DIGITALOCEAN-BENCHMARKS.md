@@ -8,21 +8,19 @@ Benchmark results for Supabase running with different DigitalOcean Shared CPU pl
 
 ## Testing Tool
 
-Use `do-limits.sh` to start Docker with specific resource limits:
+Use the unified CLI to start with specific resource limits:
 
 ```bash
-cd docker
+# Start with specific plan limits
+./supabase.sh start --plan=4gb    # Start with 4GB total RAM, 2 CPUs
+./supabase.sh resources           # Check resource usage + limits
+./supabase.sh stop                # Stop services
 
-# Start with specific plan limits (systemd-enforced total limits)
-./do-limits.sh start 4gb          # Start with 4GB total RAM, 2 CPUs
-./do-limits.sh stats              # Check resource usage + systemd limits
-./do-limits.sh stop               # Stop services
-
-# Run full benchmark
-./do-limits.sh test 2gb           # Test with 2GB total limits
+# Advanced: Direct benchmark testing
+./scripts/do-limits.sh test 2gb   # Test with 2GB total limits
 ```
 
-See [README.md](./README.md) and [WORKFLOWS.md](./WORKFLOWS.md) for usage details.
+See [README.md](./README.md) for complete usage guide.
 
 ---
 
@@ -370,30 +368,26 @@ All benchmarks use the same optimized Supabase stack with:
 ### Test Commands
 
 ```bash
-cd docker
+# User-friendly testing
+./supabase.sh start --plan=4gb    # Start with specific plan
+./supabase.sh resources           # Check resource usage
+./supabase.sh stop                # Stop services
 
-# Test specific plan
-./do-limits.sh test 4gb
-
-# Test all plans (takes 30-45 min)
-./do-limits.sh test-all
-
-# Manual testing
-./do-limits.sh start 2gb
-./load-test.sh
-./do-limits.sh stats
-./do-limits.sh stop
+# Advanced: Direct benchmark testing
+./scripts/do-limits.sh test 4gb       # Test specific plan
+./scripts/do-limits.sh test-all       # Test all plans (30-45 min)
+./scripts/load-test.sh                # Manual load testing
 ```
 
 ---
 
 ## Files
 
-- **do-limits.sh** - Helper to start Docker with limits
-- **load-test.sh** - Database performance testing
-- **docker-compose.do-*.yml** - Resource limit configurations
-- **README.md** - Quick start guide
-- **WORKFLOWS.md** - Detailed usage instructions
+- **supabase.sh** - Unified CLI (recommended for all operations)
+- **scripts/do-limits.sh** - Advanced resource limiting and benchmarking
+- **scripts/load-test.sh** - Database performance testing
+- **docker/docker-compose.do-*.yml** - Resource limit configurations
+- **README.md** - Complete usage guide
 
 ---
 

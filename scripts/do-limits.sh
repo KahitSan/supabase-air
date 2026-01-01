@@ -6,7 +6,8 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$SCRIPT_DIR"
+DOCKER_DIR="$SCRIPT_DIR/../docker"
+cd "$DOCKER_DIR"
 
 # Colors
 RED='\033[0;31m'
@@ -68,7 +69,7 @@ start_plan() {
 
   if [ -z "$(get_plan_info "$plan")" ]; then
     echo -e "${RED}Error: Invalid plan '${plan}'${NC}"
-    echo "Run '$0 list' to see available plans"
+    echo "Run './scripts/do-limits.sh list' to see available plans"
     exit 1
   fi
 
@@ -224,7 +225,7 @@ EOF_OVERRIDE
   echo ""
   docker compose ps
   echo ""
-  echo "Run '$0 stats' to see resource usage"
+  echo "Run './supabase.sh resources' to see resource usage"
 }
 
 stop_services() {
@@ -316,7 +317,7 @@ run_benchmark() {
   # Run load test
   echo ""
   echo -e "${BLUE}🧪 Running load test...${NC}"
-  ./load-test.sh 2>&1 | tee -a "${output_file}" || true
+  "$SCRIPT_DIR/load-test.sh" 2>&1 | tee -a "${output_file}" || true
 
   # Capture final stats
   echo ""

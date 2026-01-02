@@ -369,7 +369,9 @@ cmd_reset() {
     docker compose down -v 2>/dev/null || true
 
     print_info "Clearing database data..."
-    sudo rm -rf volumes/db/data/* 2>/dev/null || true
+    sudo rm -rf volumes/db/data 2>/dev/null || true
+    sudo mkdir -p volumes/db/data 2>/dev/null || true
+    sudo chown 105:106 volumes/db/data 2>/dev/null || true
 
     print_success "Reset complete!"
     echo ""

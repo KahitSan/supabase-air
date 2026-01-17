@@ -408,7 +408,7 @@ cmd_reset() {
         print_info "Run ${BLUE}./supabase.sh start${NC} when you're ready to set up and start again."
     else
         # Fast reset: keep containers running
-        if ! docker ps --format '{{.Names}}' | grep -q "alpha-supabase-db"; then
+        if ! docker ps --format '{{.Names}}' | grep -q "supabase-db"; then
             print_error "Database container is not running. Start Supabase first with ./supabase.sh start"
             exit 1
         fi
@@ -417,11 +417,11 @@ cmd_reset() {
 
         # Drop and recreate public schema (removes all user tables)
         print_info "Dropping public schema..."
-        docker exec alpha-supabase-db psql -U postgres -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public; GRANT ALL ON SCHEMA public TO postgres; GRANT ALL ON SCHEMA public TO anon; GRANT ALL ON SCHEMA public TO authenticated; GRANT ALL ON SCHEMA public TO service_role;" 2>/dev/null
+        docker exec supabase-db psql -U postgres -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public; GRANT ALL ON SCHEMA public TO postgres; GRANT ALL ON SCHEMA public TO anon; GRANT ALL ON SCHEMA public TO authenticated; GRANT ALL ON SCHEMA public TO service_role;" 2>/dev/null
 
         # Truncate auth tables
         print_info "Clearing auth data..."
-        docker exec alpha-supabase-db psql -U postgres -c "
+        docker exec supabase-db psql -U postgres -c "
             TRUNCATE auth.users CASCADE;
             TRUNCATE auth.sessions CASCADE;
             TRUNCATE auth.refresh_tokens CASCADE;

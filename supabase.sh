@@ -159,7 +159,8 @@ COMMANDS:
     container-status           Show container health status
     resources                  Show resource usage statistics
     logs [service]             Show logs (all services or specific)
-    reset                      Reset environment (WARNING: deletes all data)
+    reset [--hard]             Reset database (fast by default, ~1s)
+                               --hard: Full reset (stops containers, slower)
     help                       Show this help message
 
 START OPTIONS:
@@ -174,7 +175,8 @@ EXAMPLES:
     ./supabase.sh status                   # Show project info
     ./supabase.sh container-status         # Container health
     ./supabase.sh resources                # Resource usage
-    ./supabase.sh reset                    # Reset environment
+    ./supabase.sh reset                    # Fast reset (~1 second)
+    ./supabase.sh reset --hard             # Full reset (slower)
 
 For more information, see README.md
 
@@ -353,29 +355,96 @@ cmd_logs() {
     fi
 }
 
-# Command: reset
+# Command: reset [--hard]
 cmd_reset() {
-    print_header "Resetting Environment"
+    local hard_mode=false
 
-    print_warning "This will delete all data. Are you sure? [y/N]: "
+    # Parse --hard argument
+    for arg in "$@"; do
+        case $arg in
+            --hard)
+                hard_mode=true
+                ;;
+            *)
+                print_error "Unknown argument: $arg"
+                echo "Usage: ./supabase.sh reset [--hard]"
+                exit 1
+                ;;
+        esac
+    done
+
+    if [ "$hard_mode" = true ]; then
+        print_header "Hard Resetting Environment"
+        print_warning "This will stop all containers and delete all data. Are you sure? [y/N]: "
+    else
+        print_header "Resetting Database"
+        print_warning "This will delete all data. Are you sure? [y/N]: "
+    fi
+
     read -r confirmation
     if [[ ! "$confirmation" =~ ^[Yy]$ ]]; then
         print_info "Reset cancelled."
         exit 0
     fi
 
-    print_info "Stopping and removing all containers and volumes..."
-    cd "$DOCKER_DIR"
-    docker compose down -v 2>/dev/null || true
+    local start_time=$(date +%s)
 
-    print_info "Clearing database data..."
-    sudo rm -rf volumes/db/data 2>/dev/null || true
-    sudo mkdir -p volumes/db/data 2>/dev/null || true
-    sudo chown 105:106 volumes/db/data 2>/dev/null || true
+    if [ "$hard_mode" = true ]; then
+        # Hard reset: stop containers and remove volumes
+        print_info "Stopping and removing all containers and volumes..."
+        cd "$DOCKER_DIR"
+        docker compose down -v 2>/dev/null || true
 
-    print_success "Reset complete!"
-    echo ""
-    print_info "Run ${BLUE}./supabase.sh start${NC} when you're ready to set up and start again."
+        print_info "Clearing database data..."
+        sudo rm -rf volumes/db/data 2>/dev/null || true
+        sudo mkdir -p volumes/db/data 2>/dev/null || true
+        sudo chown 105:106 volumes/db/data 2>/dev/null || true
+
+        local end_time=$(date +%s)
+        local elapsed=$((end_time - start_time))
+
+        print_success "Hard reset complete in ${elapsed}s!"
+        echo ""
+        print_info "Run ${BLUE}./supabase.sh start${NC} when you're ready to set up and start again."
+    else
+        # Fast reset: keep containers running
+        if ! docker ps --format '{{.Names}}' | grep -q "supabase-db"; then
+            print_error "Database container is not running. Start Supabase first with ./supabase.sh start"
+            exit 1
+        fi
+
+        print_info "Resetting database (fast mode - keeping containers running)..."
+
+        # Drop and recreate public schema (removes all user tables)
+        print_info "Dropping public schema..."
+        docker exec supabase-db psql -U postgres -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public; GRANT ALL ON SCHEMA public TO postgres; GRANT ALL ON SCHEMA public TO anon; GRANT ALL ON SCHEMA public TO authenticated; GRANT ALL ON SCHEMA public TO service_role;" 2>/dev/null
+
+        # Truncate auth tables
+        print_info "Clearing auth data..."
+        docker exec supabase-db psql -U postgres -c "
+            TRUNCATE auth.users CASCADE;
+            TRUNCATE auth.sessions CASCADE;
+            TRUNCATE auth.refresh_tokens CASCADE;
+            TRUNCATE auth.mfa_factors CASCADE;
+            TRUNCATE auth.mfa_challenges CASCADE;
+            TRUNCATE auth.mfa_amr_claims CASCADE;
+            TRUNCATE auth.flow_state CASCADE;
+            TRUNCATE auth.one_time_tokens CASCADE;
+            TRUNCATE auth.audit_log_entries CASCADE;
+        " 2>/dev/null
+
+        # Clear storage files
+        print_info "Clearing storage files..."
+        cd "$DOCKER_DIR"
+        sudo rm -rf volumes/storage/* 2>/dev/null || true
+
+        local end_time=$(date +%s)
+        local elapsed=$((end_time - start_time))
+
+        print_success "Reset complete in ${elapsed}s!"
+        echo ""
+        print_info "Database is ready. Run migrations with: cd pillar-api && bun run migrate:fresh && bun run seed"
+    fi
 }
 
 # Main function
@@ -411,7 +480,8 @@ main() {
             cmd_logs "$@"
             ;;
         reset)
-            cmd_reset
+            shift
+            cmd_reset "$@"
             ;;
         *)
             print_error "Unknown command: $command"
